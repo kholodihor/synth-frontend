@@ -1,0 +1,81 @@
+$purple: purple;
+$blue: #219dff;
+$pink: #ff1f6b;
+$black: #000;
+$dark: #35373c;
+$white:#fff;
+$green:#29fd53;
+$red: red;
+$yellow:yellow;
+$lightgray:#aaa;
+$text-shadow-main: 2px 2px 1px $pink, -2px -2px 1px $blue;
+$text-shadow-header: 5px 5px 10px $pink, -5px -5px 10px $blue;
+
+@mixin formButton{
+    padding: 0.5rem 2.5rem;
+    background: none;
+    border: 1px solid $lightgray;
+    color: $white;
+    text-transform: uppercase;
+    font-size: 1rem;
+    outline: none;
+    margin: 2rem auto;
+    cursor: pointer;
+  
+    &:hover {
+      box-shadow: 2px 2px 5px $green, -2px -2px 5px $green;
+      border: 1px solid $green;
+      color: $green;
+    }
+  
+    @media screen and (max-width:450px) {
+      font-size: 0.8rem;
+    }
+}
+
+@mixin inputBox{
+  width: 100%;
+  margin: 1rem auto;
+  display: flex;
+  justify-content: center;
+
+  label:hover {
+    color: $blue;
+    text-shadow: 0 0 2px $blue;
+    cursor: pointer;
+  }
+}
+
+@mixin deleteWrapper {
+  width: 80%;
+  padding: 1rem 2rem;
+  margin-bottom: 0.5rem;
+  background-color: #232323;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h4 {
+    text-transform: uppercase;
+    font-weight: 200;
+    font-size: 0.8rem;
+    color: $blue;
+  }
+
+  button {
+    background-color: transparent;
+    padding: 0.5rem 1rem;
+    border: 1px solid $white;
+    color: $white;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    cursor: pointer;
+
+    &:hover {
+      color: $red;
+      border: 1px solid $red;
+      color: $red;
+      box-shadow: 0 0 5px $red;
+    }
+  }
+}
