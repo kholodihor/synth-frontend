@@ -5,12 +5,12 @@
       <div class="divider"></div>
       <TextInput label="Your New Name" inputType="text" placeholder="Your Name" v-model:input="form.username" />
       <span v-for="error in v$.username.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-      <CroppedImage v-if="choosedImage" :image="choosedImage" />
+      <CroppedImage v-if="imageFile" :image="imageFile" />
       <CroppedImage v-else :image="form.image ? form.image : DefaultAvatar" />
       <div class="inputbox">
         <label for="image">
           Upload Image
-          <input type="file" hidden id="image" ref="fileInput" @change="handleUpload">
+          <input type="file" hidden id="image" ref="fileInput" @change="handleImage">
           <span v-for="error in v$.image.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
         </label>
       </div>
@@ -58,22 +58,27 @@ const rules = {
 
 const v$ = useVuelidate(rules, form)
 
-const handleUpload = () => {
-  imageFile.value = fileInput.value.files[0];
-  choosedImage.value = URL.createObjectURL(fileInput.value)
+const handleImage = () => {
+  const file = fileInput.value.files[0]
+  setFileToBase64(file)
 }
+
+const setFileToBase64 = (file: any) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onloadend = () => {
+    imageFile.value = reader.result;
+  };
+};
 
 const getUploadedImage = async () => {
   if (imageFile.value) {
     try {
-      const formData = new FormData();
-      formData.append('avatar', imageFile.value);
-      const { data } = await axios.post('/api/uploadavatar', formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      form.image = data.url;
+      if (imageFile.value) {
+        const { data } = await axios.post('/api/uploadbandimage', { image: imageFile.value },
+        );
+        form.image = data.url;
+      }
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.log('Error message:', error.message);

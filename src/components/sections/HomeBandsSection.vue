@@ -4,19 +4,7 @@
     <div class="divider"></div>
     <div>
       <div class="bands-wrapper">
-        <div v-for="band in bands.slice(0, 3)" :key="band._id" class="card">
-          <div class="image">
-            <img :src="bandsStore.bandImage(band.image)" alt="" />
-          </div>
-          <div class="bands-content">
-            <h3>{{ band.title }}</h3>
-            <span class="country">{{ band.location }}</span>
-            <p>
-              {{ cutString(band.description) }}
-            </p>
-            <router-link class="readmore" :to="'/band/' + band._id">Read More...</router-link>
-          </div>
-        </div>
+        <Card v-for="band in bands.slice(0, 3)" :key="band._id" :band="band" />
       </div>
       <div class="link-to-bands-wrapper">
         <router-link class="link-to-bands" to="/bands">View More Bands...</router-link>
@@ -26,11 +14,10 @@
 </template>
 
 <script setup lang="ts">
-import axios from 'axios'
 import { onMounted, ref } from 'vue'
 import { useBandsStore } from '@/stores/bandsStore'
-import { cutString } from '@/helpers';
 import type { Band } from '@/types';
+import Card from '@/components/shared/Card.vue'
 
 const bandsStore = useBandsStore()
 const bands = ref<Band[]>([])

@@ -5,7 +5,7 @@
     <div class="bands-wrapper">
       <div class="card" v-for="band in bands" :key="band.id">
         <div class="image">
-          <img :src="bandsStore.bandImage(band.image)" alt="" />
+          <img :src="band.image" alt="" />
         </div>
         <div class="post-content">
           <h1>{{ band.title }}</h1>
@@ -15,7 +15,7 @@
           <div class="footer">
             <div class="avatar-wrapper">
               <div class="avatar">
-                <img :src="userStore.userImage(band?.user?.avatarUrl)" width="20" alt="">
+                <img :src="band?.user?.avatarUrl" width="20" alt="">
               </div>
               <div class="author"> added by <p>{{ band?.user?.username }}</p>
               </div>
@@ -56,7 +56,6 @@ onMounted(async () => {
 
 const getPaginateBands = async () => {
   try {
-    console.log(page.value)
     const res = await axios.get<Band[]>('api/bands-paginate?page=' + page.value)
     bands.value = res.data
   } catch (error) {
@@ -102,19 +101,21 @@ const getBands = async () => {
     padding: 0.8rem;
     box-shadow: 0 0 2px $white;
     border-radius: 3px;
+    aspect-ratio: 3/5;
 
     .image {
       width: 100%;
+      height: 60%;
       display: flex;
       justify-content: center;
       align-items: center;
 
       img {
-        width: 90%;
+        width: 100%;
+        height: 100%;
         object-fit: cover;
       }
     }
-
 
     .post-content {
       display: flex;
@@ -123,9 +124,6 @@ const getBands = async () => {
       gap: 0.5rem;
       flex-direction: column;
       padding: 1rem;
-
-
-
 
       h3 {
         text-transform: uppercase;
@@ -165,7 +163,10 @@ const getBands = async () => {
 
         img {
           width: 100%;
+          height: 100%;
           border-radius: 100%;
+          object-fit: cover;
+          object-position: center;
         }
       }
 

@@ -79,3 +79,23 @@ $text-shadow-header: 5px 5px 10px $pink, -5px -5px 10px $blue;
     }
   }
 }
+@mixin card{
+  padding: 0.8rem;
+  box-shadow: 0 0 2px $white;
+  border-radius: 3px;
+
+  .image {
+    width: 100%;
+    height: 60%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 0.5rem;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+}

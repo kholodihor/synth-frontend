@@ -15,7 +15,7 @@
       <LinkBtn text="LogOut" :danger="true" style="margin-right: 2rem" @click="logOut" />
       <div class="avatar-wrapper">
         <div class="avatar">
-          <img :src="profileStore.image" width="20" :alt="getFirstLetters(profileStore.username)">
+          <img :src="profileStore.image" :alt="getFirstLetters(profileStore.username)">
         </div>
       </div>
     </div>
@@ -125,7 +125,6 @@ const logOut = async () => {
       align-items: center;
       flex-direction: column;
       gap: 1rem;
-      margin-bottom: 1rem;
 
 
       .avatar {
@@ -136,7 +135,10 @@ const logOut = async () => {
 
         img {
           width: 100%;
+          height: 100%;
           border-radius: 100%;
+          object-fit: cover;
+          object-position: center;
         }
       }
 

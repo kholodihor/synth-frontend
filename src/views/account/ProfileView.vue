@@ -76,6 +76,7 @@ onMounted(async () => {
 
     .image-box {
       width: 20rem;
+      border-radius: 20rem;
 
       @media screen and (max-width:650px) {
         width: 80vw;
@@ -84,6 +85,7 @@ onMounted(async () => {
       .img {
         width: 80%;
         object-fit: cover;
+        border-radius: 20rem;
 
         @media screen and (max-width:650px) {
           width: 100%;

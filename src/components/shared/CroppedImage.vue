@@ -23,6 +23,7 @@ const { label, image } = toRefs(props)
 
   img {
     width: 100%;
+
   }
 }
 </style>

@@ -18,7 +18,7 @@ export const useVideoStore = defineStore("video", {
     },
 
     async fetchVideosByUserId() {
-      const res = await axios.get("api/video");
+      const res = await axios.get("api/user/video");
       if (res.data) {
         this.$state.videos = res.data;
       }

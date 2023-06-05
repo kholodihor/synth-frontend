@@ -3,7 +3,7 @@
     <div class="bands-wrapper">
       <div class="card">
         <div class="image">
-          <img :src="bandsStore.bandImage(band.image)" :alt="band.title" />
+          <img :src="band.image" :alt="band.title" />
         </div>
         <div class="post-content">
           <h3>{{ band.title }}</h3>

@@ -8,7 +8,7 @@
     <span v-for="error in v$.title.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
     <div class="inputbox">
       <label for="song">
-        Upload Song
+        {{ songFile ? songFile.name : 'Upload Song' }}
         <input type="file" hidden id="song" ref="fileInput" @change="handleFileUpload">
         <span v-for="error in v$.song.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
       </label>
@@ -89,6 +89,14 @@ const addSong = async () => {
           "Content-Type": "application/json",
         },
       })
+      Swal.fire(
+        {
+          title: 'Band is added!',
+          text: 'You added a song called "' + form.title + '"' + 'by' + form.artist,
+          icon: 'success',
+          confirmButtonColor: "#219dff",
+        }
+      )
       songStore.fetchSongsByUserId()
       setTimeout(() => {
         router.push('/account/profile/' + userStore._id)

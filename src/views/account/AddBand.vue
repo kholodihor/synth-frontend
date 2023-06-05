@@ -6,11 +6,11 @@
     <span v-for="error in v$.title.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
     <TextInput label="Country of the Band" inputType="text" placeholder="Band Country" v-model:input="form.location" />
     <span v-for="error in v$.location.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <CroppedImage :image="choosedImage" />
+    <CroppedImage :image="imageFile ? imageFile : ''" />
     <div class="inputbox">
       <label for="image">
         Upload Image
-        <input type="file" hidden id="image" ref="fileInput" @change="handleFileUpload">
+        <input type="file" hidden id="image" ref="fileInput" @change="handleFile">
         <span v-for="error in v$.image.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
       </label>
     </div>
@@ -24,8 +24,8 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import Swal from '@/utils/swal'
-import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useBandsStore } from '@/stores/bandsStore'
 import { useVuelidate } from '@vuelidate/core'
@@ -46,7 +46,6 @@ const form = reactive({
   image: ''
 })
 
-const choosedImage = ref('')
 const imageFile = ref()
 const fileInput = ref()
 
@@ -59,21 +58,24 @@ const rules = {
 
 const v$ = useVuelidate(rules, form)
 
-const handleFileUpload = () => {
-  imageFile.value = fileInput.value.files[0]
-  choosedImage.value = URL.createObjectURL(imageFile.value)
+const handleFile = () => {
+  const file = fileInput.value.files[0]
+  setFileToBase64(file)
 }
+
+const setFileToBase64 = (file: any) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onloadend = () => {
+    imageFile.value = reader.result;
+  };
+};
 
 const getUploadedImage = async () => {
   try {
     if (imageFile.value) {
-      const formData = new FormData();
-      formData.append('band', imageFile.value);
-      const { data } = await axios.post('/api/uploadbandimage', formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const { data } = await axios.post('/api/uploadbandimage', { image: imageFile.value },
+      );
       form.image = data.url;
     }
   } catch (error) {
