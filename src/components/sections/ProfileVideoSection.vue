@@ -16,24 +16,18 @@
 </template>
 
 <script setup lang="ts">
-import type { Video } from '@/types';
-import { onMounted, ref } from 'vue';
+import type { Video, User } from '@/types';
 import { useRoute } from 'vue-router'
-import { useVideoStore } from '@/stores/videoStore'
-import { useUserStore } from '@/stores/userStore'
 import { replaceUrl } from '@/helpers';
 import LinkBtn from '@/components/shared/LinkBtn.vue'
 
 const route = useRoute()
-const userStore = useUserStore()
-const videoStore = useVideoStore()
 
-const videos = ref<Video[]>([])
+defineProps<{
+  videos: Video[]
+  userStore: User
+}>()
 
-onMounted(async () => {
-  await videoStore.fetchVideosByUserId()
-  videos.value = videoStore.videos
-})
 </script>
 
 <style scoped lang="scss">

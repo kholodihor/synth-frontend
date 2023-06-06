@@ -44,7 +44,6 @@ onMounted(async () => {
 })
 
 const logOut = async () => {
-
   Swal.fire({
     title: `Are you sure you want to logout from 'Synth' ?`,
     icon: 'warning',

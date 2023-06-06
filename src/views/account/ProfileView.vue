@@ -15,9 +15,9 @@
       </div>
     </div>
   </div>
-  <SongsSection />
-  <VideoSection />
-  <BandsSection />
+  <SongsSection :songs="songStore.songs" :userStore="userStore" />
+  <VideoSection :videos="videoStore.videos" :userStore="userStore" />
+  <BandsSection :bands="bandsStore.bands" :userStore="userStore" />
 </template>
 
 <script setup lang="ts">
@@ -25,19 +25,27 @@ import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useProfileStore } from '@/stores/profileStore'
+import { useBandsStore } from '@/stores/bandsStore'
+import { useVideoStore } from '@/stores/videoStore'
+import { useSongStore } from '@/stores/songStore'
 import LinkBtn from '@/components/shared/LinkBtn.vue'
+import BandsSection from '@/components/sections/ProfileBandsSection.vue';
 import SongsSection from '@/components/sections/SongsSection.vue';
 import VideoSection from '@/components/sections/ProfileVideoSection.vue';
-import BandsSection from '@/components/sections/ProfileBandsSection.vue';
 
 const route = useRoute()
 const userStore = useUserStore()
 const profileStore = useProfileStore()
+const bandsStore = useBandsStore()
+const videoStore = useVideoStore()
+const songStore = useSongStore()
 
 onMounted(async () => {
   await profileStore.fetchProfileById()
+  await bandsStore.fetchBandsByUserId()
+  await videoStore.fetchVideosByUserId()
+  await songStore.fetchSongsByUserId()
 })
-
 </script>
 
 <style scoped lang="scss">

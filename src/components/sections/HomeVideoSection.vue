@@ -12,22 +12,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useVideoStore } from '@/stores/videoStore'
+import { replaceUrl } from '@/helpers'
 import type { Video } from '@/types';
 
-const videoStore = useVideoStore()
+defineProps<{
+  videos: Video[]
+}>()
 
-const videos = ref<Video[]>([])
-
-onMounted(async () => {
-  await videoStore.fetchVideos()
-  videos.value = videoStore.videos
-})
-
-const replaceUrl = (url: string): string => {
-  return url.replace("watch?v=", "embed/");
-}
 </script>
 
 <style scoped lang="scss">

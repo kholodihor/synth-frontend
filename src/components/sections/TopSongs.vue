@@ -3,7 +3,7 @@
     <div class="left">
       <h1>Top SynthPop Songs</h1>
       <div class="divider"></div>
-      <TopSongsPlayer :songs="topSongStore.songs" />
+      <TopSongsPlayer :songs="songs" />
     </div>
     <div class="right">
       <EclipseBlock />
@@ -12,16 +12,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useTopSongsStore } from '@/stores/topSongsStore'
 import TopSongsPlayer from '@/components/sections/TopSongsPlayer.vue'
 import EclipseBlock from '../decor/EclipseBlock.vue';
+import type { Song } from '@/types';
 
-const topSongStore = useTopSongsStore()
+defineProps<{
+  songs: Song[]
+}>()
 
-onMounted(async () => {
-  await topSongStore.fetchSongs();
-})
 </script>
 
 <style scoped lang="scss">

@@ -6,12 +6,12 @@
     <div class="bands-content">
       <h3>{{ band.title }}</h3>
       <span class="country">{{ band.location }}</span>
-      <p>
+      <p class="description">
         {{ cutString(band.description) }}
       </p>
       <div class="actions" v-if="userStore._id === route.params.id">
         <LinkBtn text="Edit Band" :url="'/account/edit-band/' + band._id" :warning="true" />
-        <LinkBtn text="Delete Band" @click="deleteBand(band.title, band._id)" :danger="true" />
+        <LinkBtn text="Delete Band" @click="deleteBand(band._id, band.title)" :danger="true" />
       </div>
       <div class="footer" v-if="!route.params.id">
         <div class="avatar-wrapper">
@@ -29,9 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import Swal from '@/utils/swal'
-import axios from 'axios'
-import type { Band } from '@/types';
+import type { Band } from '@/types'
 import { cutString } from '@/helpers'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
@@ -46,32 +44,9 @@ defineProps<{
   band: Band
 }>()
 
-const deleteBand = async (title: string, _id: string) => {
-  Swal.fire({
-    title: 'Are you sure you want to delete the band "' + title + '"',
-    text: 'You won\'t be able to revert this!',
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonText: 'Yes, please!',
-    confirmButtonColor: '#29fd53',
-    cancelButtonColor: 'red',
-  }).then(async (result: { isConfirmed: boolean; }) => {
-    if (result.isConfirmed) {
-      try {
-        await axios.delete('api/bands/' + _id)
-        bandsStore.fetchBandsByUserId()
-        Swal.fire(
-          'Deleted!',
-          'This band has been deleted.',
-          'success'
-        )
-      } catch (err) {
-        console.log(err)
-      }
-    }
-  })
+const deleteBand = (_id: string, title: string) => {
+  bandsStore.deleteBand(_id, title)
 }
-
 </script>
 
 <style scoped lang="scss">
@@ -110,6 +85,10 @@ const deleteBand = async (title: string, _id: string) => {
     font-size: 1.5rem;
     text-shadow: $text-shadow-main;
     margin-bottom: auto;
+  }
+
+  .description {
+    height: 4rem;
   }
 
   .readmore {

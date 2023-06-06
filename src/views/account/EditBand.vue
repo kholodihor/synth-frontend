@@ -6,12 +6,12 @@
     <span v-for="error in v$.title.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
     <TextInput label="band Country" inputType="text" placeholder="Band Country" v-model:input="form.location" />
     <span v-for="error in v$.location.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <CroppedImage v-if="choosedImage" :image="choosedImage" />
+    <CroppedImage v-if="choosedImage" :image="imageFile ? imageFile : ''" />
     <CroppedImage v-else :image="form.image ? form.image : DefaultAvatar" />
     <div class="inputbox">
       <label for="image">
         Upload Image
-        <input type="file" hidden id="image" ref="fileInput" @change="handleFileUpload">
+        <input type="file" hidden id="image" ref="fileInput" @change="handleFile">
         <span v-for="error in v$.image.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
       </label>
     </div>
@@ -66,21 +66,29 @@ onMounted(async () => {
   await getBandById()
 })
 
-const handleFileUpload = () => {
-  imageFile.value = fileInput.value.files[0]
-  choosedImage.value = URL.createObjectURL(imageFile.value)
+// const handleFileUpload = () => {
+//   imageFile.value = fileInput.value.files[0]
+//   choosedImage.value = URL.createObjectURL(imageFile.value)
+// }
+
+const handleFile = () => {
+  const file = fileInput.value.files[0]
+  setFileToBase64(file)
 }
+
+const setFileToBase64 = (file: any) => {
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onloadend = () => {
+    imageFile.value = reader.result;
+  };
+};
 
 const getUploadedImage = async () => {
   try {
     if (imageFile.value) {
-      const formData = new FormData();
-      formData.append('band', imageFile.value);
-      const { data } = await axios.post('/api/uploadbandimage', formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const { data } = await axios.post('/api/uploadbandimage', { image: imageFile.value },
+      );
       form.image = data.url;
     }
   } catch (error) {
@@ -97,7 +105,7 @@ const getBandById = async () => {
     const res = await axios.get<Band>('api/bands/' + route.params.id)
     form.title = res.data.title
     form.location = res.data.location
-    form.image = bandsStore.bandImage(res.data.image)
+    form.image = res.data.image
     form.description = res.data.description
   } catch (error) {
     if (axios.isAxiosError(error)) {

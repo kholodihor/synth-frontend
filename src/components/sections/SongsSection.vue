@@ -13,20 +13,18 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
-import { useSongStore } from '@/stores/songStore'
+import type { Song, User } from '@/types';
 import LinkBtn from '@/components/shared/LinkBtn.vue'
 import SongPlayer from '@/components/sections/SongPlayer.vue'
 
 const route = useRoute()
-const userStore = useUserStore()
-const songStore = useSongStore()
 
-onMounted(async () => {
-  await songStore.fetchSongsByUserId()
-})
+defineProps<{
+  songs: Song[]
+  userStore: User
+}>()
+
 </script>
 
 <style scoped lang="scss">

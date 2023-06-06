@@ -1,5 +1,5 @@
 export const cutString = (str: string): string => {
-  return str.split(" ").slice(0, 17).join(" ") + "...";
+  return str.split(" ").slice(0, 15).join(" ") + "...";
 };
 
 export const replaceUrl = (url: string): string => {

@@ -14,18 +14,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useBandsStore } from '@/stores/bandsStore'
 import type { Band } from '@/types';
 import Card from '@/components/shared/Card.vue'
 
-const bandsStore = useBandsStore()
-const bands = ref<Band[]>([])
+defineProps<{
+  bands: Band[]
+}>()
 
-onMounted(async () => {
-  await bandsStore.getAllBands()
-  bands.value = bandsStore.bands
-})
 </script>
 
 <style scoped lang="scss">

@@ -14,24 +14,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import type { Band, User } from '@/types';
 import { useRoute } from 'vue-router'
-import { useBandsStore } from '@/stores/bandsStore'
-import { useUserStore } from '@/stores/userStore'
 import LinkBtn from "@/components/shared/LinkBtn.vue";
-import type { Band } from '@/types';
-import  Card from '@/components/shared/Card.vue'
+import Card from '@/components/shared/Card.vue'
 
 const route = useRoute()
-const bandsStore = useBandsStore()
-const userStore = useUserStore()
 
-const bands = ref<Band[]>([])
-
-onMounted(async () => {
-  await bandsStore.fetchBandsByUserId()
-  bands.value = bandsStore.bands
-})
+defineProps<{
+  bands: Band[]
+  userStore: User
+}>()
 
 </script>
 

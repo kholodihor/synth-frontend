@@ -114,6 +114,7 @@ const addBand = async () => {
       )
       await bandsStore.fetchBandsByUserId()
       router.push('/account/profile/' + userStore._id)
+
     } catch (error) {
       console.log(error)
     }
