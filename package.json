@@ -21,7 +21,7 @@
     "dotenv": "^16.0.3",
     "pinia": "^2.0.36",
     "pinia-plugin-persistedstate": "^3.0.2",
-    "sweetalert2": "^11.7.7",
+    "sweetalert2": "^11.7.16",
     "vue": "^3.3.2",
     "vue-advanced-cropper": "^2.8.8",
     "vue-router": "^4.2.0"

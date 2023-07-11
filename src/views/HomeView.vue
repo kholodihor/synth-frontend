@@ -3,7 +3,7 @@
     <AppHeader />
   </header>
   <main>
-    <ProfileHeader />
+    <Navbar />
     <Bands :bands="bandsStore.bands" />
     <CardsBlock />
     <TopSongs :songs="topSongStore.songs" />
@@ -19,7 +19,7 @@
 import { onMounted } from 'vue';
 import AppHeader from '@/components/sections/AppHeader.vue';
 import Bands from '@/components/sections/HomeBandsSection.vue';
-import ProfileHeader from '@/components/sections/ProfileHeader.vue';
+import Navbar from '@/components/sections/Navbar.vue';
 import CardsBlock from '@/components/sections/CardsBlock.vue';
 import TopSongs from '@/components/sections/TopSongs.vue'
 import SynthpopGirls from '@/components/sections/SynthpopGirls.vue';

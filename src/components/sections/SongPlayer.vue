@@ -19,7 +19,7 @@ onMounted(() => {
 })
 
 const mapSongs = () => {
-  const newSongs = songStore.songs.map(function (song: Song) {
+  const newSongs = songStore.songs.map((song: Song) => {
     return {
       name: song.title,
       artist: song.artist,

@@ -42,7 +42,6 @@ const form = reactive({
   image: ''
 })
 
-const choosedImage = ref('')
 const imageFile = ref()
 const fileInput = ref()
 
@@ -116,7 +115,7 @@ const updateUser = async () => {
   } else {
     Swal.fire(
       {
-        title: 'Opps, something went wrong!',
+        title: 'Something went wrong!',
         text: 'You dont fill all fields that are required or inputs are invalid',
         icon: 'warning',
         confirmButtonColor: "#219dff",

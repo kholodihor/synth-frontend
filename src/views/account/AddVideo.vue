@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { reactive } from 'vue';
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore';
@@ -52,7 +52,7 @@ const addYoutubeVideoLink = async () => {
       Swal.fire(
         {
           title: 'New video added!',
-          text: 'You added a video with the name "' + form.title + '"',
+          text: 'You added a video "' + form.title + '"',
           icon: 'success',
           confirmButtonColor: "#219dff",
         }
@@ -68,7 +68,7 @@ const addYoutubeVideoLink = async () => {
   } else {
     Swal.fire(
       {
-        title: 'Opps, something went wrong!',
+        title: 'Something went wrong!',
         text: 'You dont fill all the fields that are required or inputs are invalid',
         icon: 'warning',
         confirmButtonColor: "#219dff",

@@ -24,11 +24,16 @@
 import axios from 'axios';
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router'
-import { useBandsStore } from '@/stores/bandsStore';
 import type { Band } from '@/types';
 const route = useRoute()
-const bandsStore = useBandsStore()
-const band = ref<any>([])
+
+const band = ref<Band>({
+  _id: '',
+  title: '',
+  image: '',
+  location: '',
+  description: ''
+})
 
 onMounted(async () => {
   await getBandById()

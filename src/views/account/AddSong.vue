@@ -91,7 +91,7 @@ const addSong = async () => {
       })
       Swal.fire(
         {
-          title: 'Band is added!',
+          title: 'Song is added!',
           text: 'You added a song called "' + form.title + '"' + 'by' + form.artist,
           icon: 'success',
           confirmButtonColor: "#219dff",
@@ -111,7 +111,7 @@ const addSong = async () => {
   } else {
     Swal.fire(
       {
-        title: 'Opps, something went wrong!',
+        title: 'Something went wrong!',
         text: 'You dont fill all fields that are required or inputs are invalid',
         icon: 'warning',
         confirmButtonColor: "#219dff",

@@ -66,10 +66,6 @@ onMounted(async () => {
   await getBandById()
 })
 
-// const handleFileUpload = () => {
-//   imageFile.value = fileInput.value.files[0]
-//   choosedImage.value = URL.createObjectURL(imageFile.value)
-// }
 
 const handleFile = () => {
   const file = fileInput.value.files[0]
@@ -122,7 +118,7 @@ const updateBand = async () => {
   }
   if (!form.image) {
     Swal.fire(
-      'No  image found!',
+      'No image found!',
       'Please choose an image of your choice and complete all other inputs',
       'warning'
     )
@@ -146,7 +142,7 @@ const updateBand = async () => {
       Swal.fire(
         {
           title: 'Band is updated!',
-          text: 'The band you edited is called "' + form.title + '"',
+          text: 'You edited a band called "' + form.title + '"',
           icon: 'success',
           background: "rgba(0,0,0,0.5)",
           confirmButtonColor: "#219dff",
@@ -164,7 +160,7 @@ const updateBand = async () => {
   } else {
     Swal.fire(
       {
-        title: 'Opps, something went wrong!',
+        title: 'Something went wrong!',
         text: 'You dont fill all fields that are required or inputs are invalid',
         icon: 'warning',
         confirmButtonColor: "#219dff",

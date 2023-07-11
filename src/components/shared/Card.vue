@@ -51,14 +51,14 @@ const deleteBand = (_id: string, title: string) => {
 
 <style scoped lang="scss">
 .card {
-  aspect-ratio: 3/5;
+  aspect-ratio: 3/4;
   padding: 0.5rem;
   box-shadow: 0 0 2px $white;
   border-radius: 3px;
 
   .image {
     width: 100%;
-    height: 60%;
+    height: 50%;
     display: flex;
     justify-content: center;
     align-items: center;

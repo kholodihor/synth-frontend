@@ -3,7 +3,7 @@
     <h1>SynthPop Bands</h1>
     <div class="divider"></div>
     <div class="bands-wrapper">
-      <div class="card" v-for="band in bands" :key="band.id">
+      <div class="card" v-for="band in bands" :key="band._id">
         <div class="image">
           <img :src="band.image" alt="" />
         </div>
@@ -36,18 +36,14 @@
 <script setup lang="ts">
 import axios from 'axios';
 import { onMounted, ref } from 'vue';
-import { useBandsStore } from '@/stores/bandsStore';
-import { useUserStore } from '@/stores/userStore';
 import { cutString } from '@/helpers';
 import type { Band } from '@/types';
 import LinkBtn from '@/components/shared/LinkBtn.vue';
 import VPagination from "@hennge/vue3-pagination";
 import "@hennge/vue3-pagination/dist/vue3-pagination.css";
 
-const bandsStore = useBandsStore()
-const userStore = useUserStore()
 const page = ref(1)
-const bands = ref<any>([])
+const bands = ref<Band[]>([])
 const pageCount = ref(0)
 
 onMounted(async () => {
