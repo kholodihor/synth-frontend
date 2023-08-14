@@ -13,7 +13,7 @@
         <span v-for="error in v$.song.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
       </label>
     </div>
-    <SubmitBtn @click="addSong" text="add song" />
+    <SubmitBtn @click="addSong" :text="processing ? 'loading...' : 'add song'" />
   </div>
 </template>
 
@@ -41,6 +41,7 @@ const form = reactive({
 
 const songFile = ref()
 const fileInput = ref()
+const processing = ref(false)
 
 const rules = {
   title: { required },
@@ -52,18 +53,21 @@ const v$ = useVuelidate(rules, form)
 
 const handleFileUpload = () => {
   songFile.value = fileInput.value.files[0]
+
 }
 
 const getUploadedSong = async () => {
   try {
     if (songFile.value) {
-      const formData = new FormData();
-      formData.append('song', songFile.value);
-      const { data } = await axios.post('api/uploadsong', formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const formData = new FormData()
+      formData.append('song', songFile.value)
+      const { data } = await axios.post('/api/uploadsong', formData,
+        {
+          headers: {
+            "Content-type": "multipart/form-data",
+          },
+        }
+      );
       form.song = data.url;
     }
   } catch (error) {
@@ -76,6 +80,7 @@ const getUploadedSong = async () => {
 }
 
 const addSong = async () => {
+  processing.value = true
   await getUploadedSong();
   const result = await v$.value.$validate();
   if (result) {
@@ -92,7 +97,7 @@ const addSong = async () => {
       Swal.fire(
         {
           title: 'Song is added!',
-          text: 'You added a song called "' + form.title + '"' + 'by' + form.artist,
+          text: 'You added a song called "' + form.title + '"'  +  'by' + form.artist,
           icon: 'success',
           confirmButtonColor: "#219dff",
         }
@@ -107,6 +112,8 @@ const addSong = async () => {
       } else {
         console.error('An error occurred:', error);
       }
+    } finally {
+      processing.value = false
     }
   } else {
     Swal.fire(

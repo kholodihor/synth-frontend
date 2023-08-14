@@ -23,7 +23,7 @@ const mapSongs = () => {
     return {
       name: song.title,
       artist: song.artist,
-      url: import.meta.env.VITE_APP_API_URL + song.song
+      url: song.song
     }
   })
   for (let i = 0; i < newSongs.length; i++) {

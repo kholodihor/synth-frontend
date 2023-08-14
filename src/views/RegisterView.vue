@@ -10,6 +10,7 @@
     <TextInput label="Confirm Password" inputType="password" placeholder="Confirm Your Password"
       v-model:input="form.confirmPassword" />
     <span v-for="error in v$.confirmPassword.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
+    <span v-if="form.password !== form.confirmPassword" class="error">Passwords mismatch</span>
     <button @click="register" class="form-button">Register</button>
     <RouterLink to="/login">Already have an account? <span class="login-link">Login!</span></RouterLink>
   </div>

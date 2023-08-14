@@ -7,12 +7,12 @@
     <TextInput label="Video Url" placeholder="Add a url of a Youtube Video" v-model:input="form.videoUrl"
       inputType="text" />
     <span v-for="error in v$.videoUrl.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <SubmitBtn text="add video" @click="addYoutubeVideoLink" />
+    <SubmitBtn :text="processing ? 'loading...' : 'add video'"  @click="addYoutubeVideoLink" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { ref, reactive } from 'vue';
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore';
@@ -24,6 +24,8 @@ import Swal from '@/utils/swal'
 
 const router = useRouter()
 const userStore = useUserStore()
+
+const processing = ref(false)
 
 const form = reactive({
   title: '',
@@ -40,6 +42,7 @@ const v$ = useVuelidate(rules, form)
 const addYoutubeVideoLink = async () => {
   const result = await v$.value.$validate();
   if (result) {
+    processing.value = true
     try {
       const formData = new FormData()
       formData.append('title', form.title)
@@ -64,6 +67,8 @@ const addYoutubeVideoLink = async () => {
       } else {
         console.error('An error occurred:', error);
       }
+    } finally{
+      processing.value = false
     }
   } else {
     Swal.fire(

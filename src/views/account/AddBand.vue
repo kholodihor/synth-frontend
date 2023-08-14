@@ -17,7 +17,7 @@
     <TextArea label="description" placeholder="Add an information about this band here"
       v-model:description="form.description" />
     <span v-for="error in v$.description.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <SubmitBtn text="add band" @submit="addBand" />
+    <SubmitBtn :text="processing ? 'loading...' : 'add band'" @submit="addBand" />
   </div>
 </template>
 
@@ -48,6 +48,7 @@ const form = reactive({
 
 const imageFile = ref()
 const fileInput = ref()
+const processing = ref(false)
 
 const rules = {
   title: { required },
@@ -88,6 +89,7 @@ const getUploadedImage = async () => {
 }
 
 const addBand = async () => {
+  processing.value = true
   await getUploadedImage()
   const result = await v$.value.$validate();
   if (result) {
@@ -117,6 +119,8 @@ const addBand = async () => {
 
     } catch (error) {
       console.log(error)
+    } finally {
+      processing.value = false
     }
   } else {
     Swal.fire(
