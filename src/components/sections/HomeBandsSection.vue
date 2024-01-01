@@ -14,13 +14,12 @@
 </template>
 
 <script setup lang="ts">
-import type { Band } from '@/types';
+import type { Band } from '@/types'
 import Card from '@/components/shared/Card.vue'
 
 defineProps<{
   bands: Band[]
 }>()
-
 </script>
 
 <style scoped lang="scss">
@@ -47,12 +46,13 @@ defineProps<{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
+    place-items: center;
 
-    @media screen and (max-width:850px) {
+    @media screen and (max-width: 1280px) {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    @media screen and (max-width:450px) {
+    @media screen and (max-width: 550px) {
       grid-template-columns: 1fr;
     }
 
@@ -100,7 +100,6 @@ defineProps<{
         display: inline-block;
         font-size: 0.7rem;
         padding: 0.5rem 0;
-
       }
     }
 

@@ -1,23 +1,49 @@
 <template>
   <div class="page wrapper">
     <h1>Register</h1>
-    <TextInput label="name" inputType="text" placeholder="Your Name" v-model:input="form.username" />
-    <span v-for="error in v$.username.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
+    <TextInput
+      label="name"
+      inputType="text"
+      placeholder="Your Name"
+      v-model:input="form.username"
+    />
+    <span v-for="error in v$.username.$errors" :key="error.uid" class="error">{{
+      error.$message
+    }}</span>
     <TextInput label="email" inputType="text" placeholder="Your Email" v-model:input="form.email" />
-    <span v-for="error in v$.email.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <TextInput label="password" inputType="password" placeholder="Your Password" v-model:input="form.password" />
-    <span v-for="error in v$.password.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <TextInput label="Confirm Password" inputType="password" placeholder="Confirm Your Password"
-      v-model:input="form.confirmPassword" />
-    <span v-for="error in v$.confirmPassword.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
+    <span v-for="error in v$.email.$errors" :key="error.uid" class="error">{{
+      error.$message
+    }}</span>
+    <TextInput
+      label="password"
+      inputType="password"
+      placeholder="Your Password"
+      v-model:input="form.password"
+    />
+    <span v-for="error in v$.password.$errors" :key="error.uid" class="error">{{
+      error.$message
+    }}</span>
+    <TextInput
+      label="Confirm Password"
+      inputType="password"
+      placeholder="Confirm Your Password"
+      v-model:input="form.confirmPassword"
+    />
+    <span v-for="error in v$.confirmPassword.$errors" :key="error.uid" class="error">{{
+      error.$message
+    }}</span>
     <span v-if="form.password !== form.confirmPassword" class="error">Passwords mismatch</span>
-    <button @click="register" class="form-button">Register</button>
-    <RouterLink to="/login">Already have an account? <span class="login-link">Login!</span></RouterLink>
+    <button @click="register" class="form-button">
+      {{ isProcessing ? 'processing' : 'login' }}
+    </button>
+    <RouterLink to="/login"
+      >Already have an account? <span class="login-link">Login!</span></RouterLink
+    >
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, computed } from 'vue';
+import { reactive, ref, computed } from 'vue'
 import axios from 'axios'
 import Swal from '@/utils/swal'
 import { useRouter, RouterLink } from 'vue-router'
@@ -28,7 +54,7 @@ import { useVideoStore } from '@/stores/videoStore'
 import { useBandsStore } from '@/stores/bandsStore'
 import { useVuelidate } from '@vuelidate/core'
 import { required, email, minLength, sameAs } from '@vuelidate/validators'
-import TextInput from '@/components/shared/TextInput.vue';
+import TextInput from '@/components/shared/TextInput.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -41,23 +67,26 @@ const form = reactive({
   username: '',
   email: '',
   password: '',
-  confirmPassword: '',
+  confirmPassword: ''
 })
+
+const isProcessing = ref(false)
 
 const rules = computed(() => {
   return {
     username: { required },
     email: { required, email },
     password: { required, minLength: minLength(6) },
-    confirmPassword: { required, minLength: minLength(6), sameAs: sameAs(form.password) },
+    confirmPassword: { required, minLength: minLength(6), sameAs: sameAs(form.password) }
   }
 })
 
 const v$ = useVuelidate(rules, form)
 
 const register = async () => {
-  const result = await v$.value.$validate();
+  const result = await v$.value.$validate()
   if (result) {
+    isProcessing.value = true
     try {
       const response = await axios.post('/api/user/register', {
         username: form.username,
@@ -71,30 +100,29 @@ const register = async () => {
       await songStore.fetchSongsByUserId()
       await bandsStore.fetchBandsByUserId()
       await videoStore.fetchVideosByUserId()
+      isProcessing.value = false
       router.push('/account/profile/' + userStore._id)
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message);
+        console.log('Error message:', error.message)
       } else {
-        console.error('An error occurred:', error);
+        console.error('An error occurred:', error)
       }
     }
   } else {
-    Swal.fire(
-      {
-        title: 'Something went wrong!',
-        text: 'You dont fill all fields that are required or inputs are invalid',
-        icon: 'warning',
-        confirmButtonColor: "#219dff",
-      }
-    )
+    Swal.fire({
+      title: 'Something went wrong!',
+      text: 'You dont fill all fields that are required or inputs are invalid',
+      icon: 'warning',
+      confirmButtonColor: '#219dff'
+    })
   }
 }
 </script>
 
 <style scoped lang="scss">
 .form-button {
-  @include formButton
+  @include formButton;
 }
 
 .login-link:hover {

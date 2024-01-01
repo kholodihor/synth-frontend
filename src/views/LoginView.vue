@@ -2,16 +2,28 @@
   <div class="page wrapper">
     <h1>Login</h1>
     <TextInput label="email" inputType="text" placeholder="Your Email" v-model:input="form.email" />
-    <span v-for="error in v$.email.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <TextInput label="password" inputType="password" placeholder="Your Password" v-model:input="form.password" />
-    <span v-for="error in v$.password.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <button @click="login" class="form-button">login</button>
-    <RouterLink to="/register">Do not have an account? <span class="register-link">Register!</span></RouterLink>
+    <span v-for="error in v$.email.$errors" :key="error.uid" class="error">{{
+      error.$message
+    }}</span>
+    <TextInput
+      label="password"
+      inputType="password"
+      placeholder="Your Password"
+      v-model:input="form.password"
+    />
+    <span v-for="error in v$.password.$errors" :key="error.uid" class="error">{{
+      error.$message
+    }}</span>
+    <span v-if="errorMessage" class="error">{{ handleErrors(errorMessage) }}</span>
+    <button @click="login" class="form-button">{{ isProcessing ? 'processing' : 'login' }}</button>
+    <RouterLink to="/register"
+      >Do not have an account? <span class="register-link">Register!</span></RouterLink
+    >
   </div>
 </template>
 
-<script setup lang="ts" >
-import { reactive } from 'vue';
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
 import axios from 'axios'
 import Swal from '@/utils/swal'
 import { useRouter, RouterLink } from 'vue-router'
@@ -21,13 +33,17 @@ import { useSongStore } from '@/stores/songStore'
 import { useVideoStore } from '@/stores/videoStore'
 import { useBandsStore } from '@/stores/bandsStore'
 import { useVuelidate } from '@vuelidate/core'
+import { handleErrors } from '@/utils/handleErrors'
 import { required, email, minLength } from '@vuelidate/validators'
-import TextInput from '@/components/shared/TextInput.vue';
+import TextInput from '@/components/shared/TextInput.vue'
 
 const form = reactive({
   email: '',
-  password: '',
+  password: ''
 })
+
+const errorMessage = ref('')
+const isProcessing = ref(false)
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -38,18 +54,19 @@ const bandsStore = useBandsStore()
 
 const rules = {
   email: { required, email },
-  password: { required, minLength: minLength(6) },
-};
+  password: { required, minLength: minLength(6) }
+}
 
 const v$ = useVuelidate(rules, form)
 
 const login = async () => {
-  const result = await v$.value.$validate();
+  const result = await v$.value.$validate()
   if (result) {
     try {
+      isProcessing.value = true
       const res = await axios.post('api/user/login', {
         email: form.email,
-        password: form.password,
+        password: form.password
       })
       axios.defaults.headers.common['Authorization'] = 'Bearer ' + res.data.token
       userStore.setUserDetails(res)
@@ -57,31 +74,30 @@ const login = async () => {
       await songStore.fetchSongsByUserId()
       await bandsStore.fetchBandsByUserId()
       await videoStore.fetchVideosByUserId()
+      isProcessing.value = false
       router.push('/account/profile/' + userStore._id)
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message);
+        console.log('Error message:', error.message)
+        errorMessage.value = error.message
       } else {
-        console.error('An error occurred:', error);
+        console.error('An error occurred:', error)
       }
     }
   } else {
-    Swal.fire(
-      {
-        title: 'Something went wrong!',
-        text: 'You dont fill all fields that are required or inputs are invalid',
-        icon: 'warning',
-        confirmButtonColor: "#219dff",
-      }
-    )
+    Swal.fire({
+      title: 'Something went wrong!',
+      text: 'You dont fill all fields that are required or inputs are invalid',
+      icon: 'warning',
+      confirmButtonColor: '#219dff'
+    })
   }
-
 }
 </script>
 
 <style scoped lang="scss">
 .form-button {
-  @include formButton
+  @include formButton;
 }
 
 .register-link:hover {

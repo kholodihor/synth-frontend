@@ -4,7 +4,7 @@
       <img src="/infoblock-bg.webp" alt="" />
     </div>
     <div class="container">
-      <div class="card" v-for="(card, idx) in info" :key="idx">
+      <div class="card" v-for="(card, index) in info" :key="index">
         <img :src="card.image" />
         <div class="content">
           <a :href="card.url" target="_blank">listen</a>
@@ -15,12 +15,11 @@
 </template>
 
 <script setup lang="ts">
-import { useCardsStore } from '@/stores/cardsStore';
-const info = useCardsStore().cards;
+import { useCardsStore } from '@/stores/cardsStore'
+const info = useCardsStore().cards
 </script>
 
 <style scoped lang="scss">
-
 .info-block {
   position: relative;
   min-height: 100vh;
@@ -75,6 +74,7 @@ const info = useCardsStore().cards;
     .card {
       position: relative;
       width: 25%;
+      min-width: 17rem;
       height: 400px;
       background: rgba(0, 0, 0, 0.6);
       display: flex;

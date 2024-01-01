@@ -1,12 +1,18 @@
 <template>
   <div class="input__wrapper">
     <label for="textInput" class="label">{{ label }}</label>
-    <input :type="inputType" :placeholder="placeholder" class="text__input" id="textInput" v-model="computedInput">
+    <input
+      :type="inputType"
+      :placeholder="placeholder"
+      class="text__input"
+      :id="label"
+      v-model="computedInput"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { toRefs, computed } from 'vue';
+import { toRefs, computed } from 'vue'
 
 const emit = defineEmits(['update:input'])
 
@@ -29,6 +35,7 @@ const computedInput = computed({
 .input__wrapper {
   margin: 1rem auto;
   width: 60%;
+  min-width: 20rem;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -39,7 +46,6 @@ const computedInput = computed({
     width: 90%;
     padding: 0.5rem;
     border-radius: 0.5rem;
-
   }
 
   .label {

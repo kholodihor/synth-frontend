@@ -32,7 +32,7 @@ defineProps<{
   display: grid;
   grid-template-columns: repeat(2, 1fr);
 
-  @media screen and (max-width: 850px) {
+  @media screen and (max-width: 1280px) {
     grid-template-columns: 1fr;
   }
 

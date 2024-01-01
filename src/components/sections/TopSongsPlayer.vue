@@ -6,13 +6,12 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import type { Song, NewSong } from '@/types'
-import { useTopSongsStore } from '@/stores/topSongsStore'
+import type { NewSong } from '@/types'
+import { topSongs } from '@/data/topSongs'
 import APlayer from 'aplayer'
 import 'aplayer/dist/APlayer.min.css'
 
-const songStore = useTopSongsStore()
-const songsList = <NewSong[]>[]
+const songsList: NewSong[] = []
 
 onMounted(() => {
   setTimeout(() => {
@@ -21,7 +20,7 @@ onMounted(() => {
 })
 
 const mapSongs = () => {
-  const newSongs = songStore.songs.map((song: any) => {
+  const newSongs = topSongs.map((song: any) => {
     return {
       name: song.title,
       artist: song.artist,

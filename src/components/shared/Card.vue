@@ -16,9 +16,11 @@
       <div class="footer" v-if="!route.params.id">
         <div class="avatar-wrapper">
           <div class="avatar">
-            <img :src="band?.user?.avatarUrl" width="20" alt="">
+            <img :src="band?.user?.avatarUrl" width="20" alt="" />
           </div>
-          <div class="author"> added by <p>{{ band?.user?.username }}</p>
+          <div class="author">
+            added by
+            <p>{{ band?.user?.username }}</p>
           </div>
         </div>
         <router-link class="readmore" :to="'/band/' + band._id">Read More...</router-link>
@@ -34,7 +36,7 @@ import { cutString } from '@/helpers'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
 import { useBandsStore } from '@/stores/bandsStore'
-import LinkBtn from "@/components/shared/LinkBtn.vue";
+import LinkBtn from '@/components/shared/LinkBtn.vue'
 
 const userStore = useUserStore()
 const bandsStore = useBandsStore()
@@ -55,6 +57,7 @@ const deleteBand = (_id: string, title: string) => {
   padding: 0.5rem;
   box-shadow: 0 0 2px $white;
   border-radius: 3px;
+  margin: 0 auto;
 
   .image {
     width: 100%;
@@ -105,7 +108,6 @@ const deleteBand = (_id: string, title: string) => {
     display: inline-block;
     font-size: 0.7rem;
     padding: 0.5rem 0;
-
   }
 
   .actions {
@@ -146,7 +148,6 @@ const deleteBand = (_id: string, title: string) => {
         height: 4rem;
         border-radius: 100%;
 
-
         img {
           width: 100%;
           height: 100%;
@@ -164,7 +165,6 @@ const deleteBand = (_id: string, title: string) => {
           text-transform: capitalize;
         }
       }
-
     }
   }
 }

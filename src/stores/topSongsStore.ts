@@ -13,11 +13,12 @@ export const useTopSongsStore = defineStore('topsongs', {
   actions: {
     async fetchSongs() {
       this.$state.songs = topSongs
+      console.log(this.$state.songs)
     },
 
     clearSongs() {
       this.$state.songs = []
     }
-  }
-  // persist: true
+  },
+  persist: true
 })
