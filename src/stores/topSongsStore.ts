@@ -1,25 +1,23 @@
-import axios from "axios";
-import { defineStore } from "pinia";
-import type { Song } from "@/types";
+import { defineStore } from 'pinia'
+import { topSongs } from '@/data/topSongs'
 
 type Songs = {
-  songs: Song[];
-};
+  songs: any[]
+}
 
-export const useTopSongsStore = defineStore("topsongs", {
+export const useTopSongsStore = defineStore('topsongs', {
   state: (): Songs => ({
-    songs: [],
+    songs: []
   }),
 
   actions: {
     async fetchSongs() {
-      let res = await axios.get("/api/topsongs");
-      this.$state.songs = res.data;
+      this.$state.songs = topSongs
     },
 
     clearSongs() {
-      this.$state.songs = [];
-    },
-  },
-  persist: true,
-});
+      this.$state.songs = []
+    }
+  }
+  // persist: true
+})

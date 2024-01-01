@@ -13,13 +13,12 @@
 
 <script setup lang="ts">
 import TopSongsPlayer from '@/components/sections/TopSongsPlayer.vue'
-import EclipseBlock from '../decor/EclipseBlock.vue';
-import type { Song } from '@/types';
+import EclipseBlock from '../decor/EclipseBlock.vue'
+import type { Song } from '@/types'
 
 defineProps<{
   songs: Song[]
 }>()
-
 </script>
 
 <style scoped lang="scss">
@@ -33,7 +32,7 @@ defineProps<{
   display: grid;
   grid-template-columns: repeat(2, 1fr);
 
-  @media screen and (max-width:850px) {
+  @media screen and (max-width: 850px) {
     grid-template-columns: 1fr;
   }
 

@@ -16,6 +16,7 @@ export const useBandsStore = defineStore('bands', {
     async getAllBands() {
       try {
         const res = await axios.get('api/bands')
+        console.log(res.data)
         this.$state.bands = res.data
       } catch (err) {
         console.log(err)

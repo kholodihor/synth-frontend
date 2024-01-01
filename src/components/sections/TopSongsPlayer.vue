@@ -9,21 +9,23 @@ import { onMounted } from 'vue'
 import type { Song, NewSong } from '@/types'
 import { useTopSongsStore } from '@/stores/topSongsStore'
 import APlayer from 'aplayer'
-import 'aplayer/dist/APlayer.min.css';
+import 'aplayer/dist/APlayer.min.css'
 
 const songStore = useTopSongsStore()
 const songsList = <NewSong[]>[]
 
 onMounted(() => {
-  setTimeout(() => { mapSongs() }, 500)
+  setTimeout(() => {
+    mapSongs()
+  }, 500)
 })
 
 const mapSongs = () => {
-  const newSongs = songStore.songs.map((song: Song) => {
+  const newSongs = songStore.songs.map((song: any) => {
     return {
       name: song.title,
       artist: song.artist,
-      url: song.song
+      url: song.url
     }
   })
   for (let i = 0; i < newSongs.length; i++) {
@@ -35,8 +37,8 @@ const mapSongs = () => {
 const thePlayer = () => {
   new APlayer({
     container: document.getElementById('aplayer'),
-    audio: songsList,
-  });
+    audio: songsList
+  })
 }
 </script>
 
@@ -52,11 +54,11 @@ const thePlayer = () => {
     border-radius: 5px;
     box-shadow: 0px 0px 5px $blue, 0px 0px 10px $blue, 0px 0px 20px $blue;
 
-    @media screen and (max-width:850px) {
+    @media screen and (max-width: 850px) {
       width: 80%;
     }
 
-    @media screen and (max-width:450px) {
+    @media screen and (max-width: 450px) {
       width: 90%;
     }
   }
