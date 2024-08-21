@@ -5,14 +5,14 @@
       <div class="screen-overlay"></div>
       <div class="image">
         <div class="image-box">
-          <img :src="profileStore.image" class="img" alt="" />
+          <img :src="userStore.image" class="img" alt="" />
         </div>
       </div>
       <div class="info">
         <div class="info-inner">
-          <h3>{{ profileStore.username }}</h3>
+          <h3>{{ userStore.username }}</h3>
           <LinkBtn
-            v-if="profileStore._id == route.params.id"
+            v-if="userStore._id == route.params.id"
             text="Edit Profile"
             url="/account/edit-profile"
           />
@@ -30,7 +30,7 @@ import LinkBtn from '@/components/shared/LinkBtn.vue'
 const route = useRoute()
 
 defineProps<{
-  profileStore: User
+  userStore: User
 }>()
 </script>
 
