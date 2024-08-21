@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+import type { User } from '@/types'
 import LinkBtn from '@/components/shared/LinkBtn.vue'
 
 const route = useRoute()
