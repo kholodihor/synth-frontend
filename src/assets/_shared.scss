@@ -3,37 +3,37 @@ $blue: #219dff;
 $pink: #ff1f6b;
 $black: #000;
 $dark: #35373c;
-$white:#fff;
-$green:#29fd53;
+$white: #fff;
+$green: #29fd53;
 $red: red;
-$yellow:yellow;
-$lightgray:#aaa;
+$yellow: yellow;
+$lightgray: #aaa;
 $text-shadow-main: 2px 2px 1px $pink, -2px -2px 1px $blue;
 $text-shadow-header: 5px 5px 10px $pink, -5px -5px 10px $blue;
 
-@mixin formButton{
-    padding: 0.5rem 2.5rem;
-    background: none;
-    border: 1px solid $lightgray;
-    color: $white;
-    text-transform: uppercase;
-    font-size: 1rem;
-    outline: none;
-    margin: 2rem auto;
-    cursor: pointer;
-  
-    &:hover {
-      box-shadow: 2px 2px 5px $green, -2px -2px 5px $green;
-      border: 1px solid $green;
-      color: $green;
-    }
-  
-    @media screen and (max-width:450px) {
-      font-size: 0.8rem;
-    }
+@mixin formButton {
+  padding: 0.5rem 2.5rem;
+  background: none;
+  border: 1px solid $lightgray;
+  color: $white;
+  text-transform: uppercase;
+  font-size: 1rem;
+  outline: none;
+  margin: 2rem auto;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 2px 2px 5px $green, -2px -2px 5px $green;
+    border: 1px solid $green;
+    color: $green;
+  }
+
+  @media screen and (max-width: 450px) {
+    font-size: 0.8rem;
+  }
 }
 
-@mixin inputBox{
+@mixin inputBox {
   width: 100%;
   margin: 1rem auto;
   display: flex;
@@ -79,7 +79,7 @@ $text-shadow-header: 5px 5px 10px $pink, -5px -5px 10px $blue;
     }
   }
 }
-@mixin card{
+@mixin card {
   padding: 0.8rem;
   box-shadow: 0 0 2px $white;
   border-radius: 3px;

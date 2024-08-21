@@ -19,7 +19,7 @@ export const useProfileStore = defineStore('profile', {
 
   actions: {
     async fetchProfileById() {
-      let res = await axios.get('/api/user')
+      const res = await axios.get('/api/user')
       this.$state._id = res.data._id
       this.$state.username = res.data.username
       if (res.data.avatarUrl) {

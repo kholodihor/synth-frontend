@@ -4,7 +4,7 @@
     <div class="divider"></div>
     <div class="buttons-wrapper" v-if="userStore._id == route.params.id">
       <LinkBtn text="Add Song" url="/account/add-song" />
-      <LinkBtn text="Delete Song" url="/account/delete-song" :danger="true" />
+      <LinkBtn text="Delete Song" url="/account/delete-song" :danger="true" v-if="songs.length" />
     </div>
     <div>
       <SongPlayer />
@@ -14,9 +14,9 @@
 
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
-import type { Song, User } from '@/types';
+import type { Song, User } from '@/types'
 import LinkBtn from '@/components/shared/LinkBtn.vue'
-import SongPlayer from '@/components/sections/SongPlayer.vue'
+import SongPlayer from './SongPlayer.vue'
 
 const route = useRoute()
 
@@ -24,7 +24,6 @@ defineProps<{
   songs: Song[]
   userStore: User
 }>()
-
 </script>
 
 <style scoped lang="scss">

@@ -1,33 +1,23 @@
 <template>
   <div class="wrapper">
-    <h1>My Videos</h1>
+    <h1>SynthPop Videos</h1>
     <div class="divider"></div>
-    <div class="buttons-wrapper" v-if="userStore._id == route.params.id">
-      <LinkBtn text="Add Video" url="/account/add-video" />
-      <LinkBtn text="Delete Video" url="/account/delete-video" :danger="true" />
-    </div>
     <div class="video-wrapper">
-      <div v-for="video in videos" :key="video._id">
+      <div v-for="video in videos.slice(0, 3)" :key="video._id">
         <h4>{{ video.title }}</h4>
-        <iframe :src="replaceUrl(video.url)" width="310" height="200"></iframe>
+        <iframe :src="replaceUrl(video.url)" width="310" height="200" allowfullscreen></iframe>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Video, User } from '@/types';
-import { useRoute } from 'vue-router'
-import { replaceUrl } from '@/helpers';
-import LinkBtn from '@/components/shared/LinkBtn.vue'
-
-const route = useRoute()
+import { replaceUrl } from '@/helpers'
+import type { Video } from '@/types'
 
 defineProps<{
   videos: Video[]
-  userStore: User
 }>()
-
 </script>
 
 <style scoped lang="scss">
@@ -55,7 +45,7 @@ h1 {
   flex-wrap: wrap;
   gap: 2rem;
 
-  @media screen and (max-width:450px) {
+  @media screen and (max-width: 450px) {
     padding: 0;
   }
 

@@ -12,8 +12,8 @@
 </template>
 
 <script setup lang="ts">
-import TopSongsPlayer from '@/components/sections/TopSongsPlayer.vue'
-import EclipseBlock from '../decor/EclipseBlock.vue'
+import TopSongsPlayer from './TopSongsPlayer.vue'
+import EclipseBlock from '../../decor/EclipseBlock.vue'
 import type { Song } from '@/types'
 
 defineProps<{

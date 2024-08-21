@@ -1,8 +1,6 @@
 <template>
-  <header>
-    <AppHeader />
-  </header>
   <main>
+    <Hero />
     <Navbar />
     <Bands :bands="bandsStore.bands" />
     <CardsBlock />
@@ -11,23 +9,23 @@
     <Video :videos="videoStore.videos" />
   </main>
   <footer>
-    <AppFooter />
+    <Footer />
   </footer>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import AppHeader from '@/components/sections/AppHeader.vue';
-import Bands from '@/components/sections/HomeBandsSection.vue';
-import Navbar from '@/components/sections/Navbar.vue';
-import CardsBlock from '@/components/sections/CardsBlock.vue';
-import TopSongs from '@/components/sections/TopSongs.vue'
-import SynthpopGirls from '@/components/sections/SynthpopGirls.vue';
-import Video from '@/components/sections/HomeVideoSection.vue';
-import AppFooter from '@/components/sections/AppFooter.vue';
+import { onMounted } from 'vue'
 import { useBandsStore } from '@/stores/bandsStore'
 import { useVideoStore } from '@/stores/videoStore'
 import { useTopSongsStore } from '@/stores/topSongsStore'
+import Hero from '@/components/main/Hero.vue'
+import Bands from '@/components/main/Bands.vue'
+import Navbar from '@/components/main/Navbar.vue'
+import CardsBlock from '@/components/main/CardsBlock.vue'
+import TopSongs from '@/components/main/topsongs/TopSongs.vue'
+import SynthpopGirls from '@/components/main/SynthpopGirls.vue'
+import Video from '@/components/main/Video.vue'
+import Footer from '@/components/main/Footer.vue'
 
 const bandsStore = useBandsStore()
 const videoStore = useVideoStore()
@@ -36,8 +34,6 @@ const topSongStore = useTopSongsStore()
 onMounted(async () => {
   await bandsStore.getAllBands()
   await videoStore.fetchVideos()
-  await topSongStore.fetchSongs();
+  await topSongStore.fetchSongs()
 })
 </script>
-
-

@@ -1,6 +1,6 @@
 <template>
   <div class="wrapper">
-    <h1>Best SynthPop Bands</h1>
+    <h1>SynthPop Bands</h1>
     <div class="divider"></div>
     <div>
       <div class="bands-wrapper">
