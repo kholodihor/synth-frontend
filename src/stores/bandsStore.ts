@@ -66,6 +66,6 @@ export const useBandsStore = defineStore('bands', {
     clearBands() {
       this.$state.bands = []
     }
-  }
-  // persist: true
+  },
+  persist: true
 })

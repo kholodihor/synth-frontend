@@ -26,8 +26,7 @@ export const useUserStore = defineStore('user', {
     },
 
     async fetchUser() {
-      let res = await axios.get('api/user')
-      console.log('res;', res)
+      const res = await axios.get('api/user')
       this.$state._id = res.data._id
       this.$state.username = res.data.username
       if (res.data.image) {
