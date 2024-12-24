@@ -1,21 +1,49 @@
 <template>
-  <div class="profile-header">
-    <div class="logo">Synth</div>
-    <div v-if="!profileStore._id">
-      <router-link to="/login" class="login"> Login </router-link>
-    </div>
-    <div v-else class="profile">
-      <router-link :to="'/account/profile/' + profileStore._id" class="login">
+  <header class="profile-header" role="banner">
+    <router-link to="/" class="logo" aria-label="Synth - Home">Synth</router-link>
+    
+    <nav v-if="!profileStore._id" class="nav-actions">
+      <router-link 
+        to="/login" 
+        class="login-btn"
+        aria-label="Login to your account"
+      >
+        Login
+      </router-link>
+    </nav>
+
+    <nav v-else class="profile" aria-label="User navigation">
+      <router-link 
+        :to="'/account/profile/' + profileStore._id" 
+        class="login-btn"
+        aria-label="Go to your profile"
+      >
         Go to Profile
       </router-link>
-      <LinkBtn text="LogOut" :danger="true" style="margin-right: 2rem" @click="logOut" />
+      
+      <LinkBtn 
+        text="LogOut" 
+        :danger="true" 
+        class="logout-btn"
+        @click="logOut"
+        aria-label="Log out from your account"
+      />
+      
       <div class="avatar-wrapper">
-        <div class="avatar">
-          <img :src="profileStore.image" :alt="getFirstLetters(profileStore.username)" />
+        <div 
+          class="avatar"
+          role="img"
+          :aria-label="'Profile picture of ' + profileStore.username"
+        >
+          <img 
+            :src="profileStore.image" 
+            :alt="getFirstLetters(profileStore.username)"
+            loading="lazy"
+          />
         </div>
       </div>
-    </div>
-  </div>
+    </nav>
+  </header>
 </template>
 
 <script setup lang="ts">
@@ -36,108 +64,137 @@ const songStore = useSongStore()
 const videoStore = useVideoStore()
 
 onMounted(async () => {
-  await profileStore.fetchProfileById()
+  try {
+    await profileStore.fetchProfileById()
+  } catch (error) {
+    console.error('Failed to fetch profile:', error)
+  }
 })
 
 const logOut = async () => {
-  Swal.fire({
-    title: `Are you sure you want to logout from 'Synth' ?`,
+  const result = await Swal.fire({
+    title: 'Are you sure you want to logout from Synth?',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonText: 'Yes, logout',
     confirmButtonColor: '#29fd53',
-    cancelButtonColor: 'red'
-  }).then(async (result: { isConfirmed: boolean }) => {
-    if (result.isConfirmed) {
-      try {
-        userStore.clearUser()
-        profileStore.clearProfile()
-        songStore.clearSongs()
-        videoStore.clearVideos()
-        window.localStorage.removeItem('token')
-        router.push('/')
-      } catch (error) {
-        console.error('An error occurred:', error)
-      }
-    }
+    cancelButtonColor: 'red',
+    focusConfirm: false
   })
+
+  if (result.isConfirmed) {
+    try {
+      userStore.clearUser()
+      profileStore.clearProfile()
+      songStore.clearSongs()
+      videoStore.clearVideos()
+      window.localStorage.removeItem('token')
+      await router.push('/')
+    } catch (error) {
+      console.error('Logout failed:', error)
+      Swal.fire({
+        title: 'Logout Failed',
+        text: 'Please try again later',
+        icon: 'error'
+      })
+    }
+  }
 }
 </script>
 
 <style scoped lang="scss">
 .profile-header {
-  width: 90%;
+  width: min(90%, 1200px);
   margin: 1rem auto;
-  padding: 1rem 3rem;
+  padding: clamp(0.5rem, 2vw, 1rem) clamp(1rem, 3vw, 3rem);
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: $black;
-  box-shadow: 0 0 5px $blue;
-  gap: 1rem;
+  box-shadow: 0 0 5px rgba($blue, 0.5);
+  border-radius: 8px;
+  gap: clamp(0.5rem, 2vw, 1rem);
 
-  @media screen and (max-width: 550px) {
+  @media (max-width: 550px) {
     flex-direction: column;
+    text-align: center;
   }
+}
 
-  .logo {
-    font-size: 3rem;
-    font-style: italic;
-    text-shadow: $text-shadow-main;
+.logo {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-style: italic;
+  text-shadow: $text-shadow-main;
+  text-decoration: none;
+  color: inherit;
+  transition: text-shadow 0.3s ease;
+
+  &:hover,
+  &:focus-visible {
+    text-shadow: 0 0 10px $blue;
   }
+}
 
-  .login {
-    display: flex;
+.login-btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: 1px solid $blue;
+  color: $blue;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+  font-size: clamp(0.8rem, 2vw, 1rem);
+
+  &:hover,
+  &:focus-visible {
+    box-shadow: 0 0 10px rgba($blue, 0.5);
+    background-color: rgba($blue, 0.1);
+    outline: none;
+  }
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.5rem, 2vw, 1rem);
+  padding: 0.5rem;
+
+  @media (max-width: 550px) {
+    flex-wrap: wrap;
     justify-content: center;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    background-color: transparent;
-    border: 1px solid $blue;
-    color: $blue;
-    border-radius: 5px;
-    transition: all 0.2s ease-in-out;
-    white-space: nowrap;
+  }
+
+  .logout-btn {
+    margin-right: clamp(1rem, 2vw, 2rem);
+  }
+}
+
+.avatar-wrapper {
+  .avatar {
+    width: clamp(3rem, 8vw, 4rem);
+    height: clamp(3rem, 8vw, 4rem);
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba($blue, 0.3);
+    transition: border-color 0.3s ease;
 
     &:hover {
-      box-shadow: 2px 2px 5px $blue, -2px -2px 5px $blue;
+      border-color: $blue;
     }
 
-    @media screen and (max-width: 450px) {
-      font-size: 0.8rem;
-    }
-  }
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transition: transform 0.3s ease;
 
-  .profile {
-    padding: 0.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-
-    .avatar-wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      gap: 1rem;
-
-      .avatar {
-        width: 4rem;
-        height: 4rem;
-        border-radius: 100%;
-
-        img {
-          width: 100%;
-          height: 100%;
-          border-radius: 100%;
-          object-fit: cover;
-          object-position: center;
-        }
-      }
-
-      .author {
-        font-size: 1rem;
-        text-transform: capitalize;
+      &:hover {
+        transform: scale(1.1);
       }
     }
   }

@@ -1,5 +1,5 @@
 <template>
-  <Profile :userStore="userStore" />
+  <Profile :userStore="profileStore" />
   <Songs :songs="songStore.songs" :userStore="userStore" />
   <Video :videos="videoStore.videos" :userStore="userStore" />
   <Bands :bands="bandsStore.bands" :userStore="userStore" />

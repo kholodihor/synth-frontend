@@ -19,19 +19,25 @@ export const useUserStore = defineStore('user', {
   }),
   actions: {
     setUserDetails(res: { data: User }) {
-      this.$state._id = res.data._id
-      this.$state.token = res.data.token
-      this.$state.username = res.data.username
-      this.$state.email = res.data.email
+      this.$patch({
+        _id: res.data._id,
+        token: res.data.token,
+        username: res.data.username,
+        email: res.data.email
+      })
     },
 
     async fetchUser() {
-      const res = await axios.get('api/user')
-      this.$state._id = res.data._id
-      this.$state.username = res.data.username
-      if (res.data.image) {
-        this.$state.image =
-          import.meta.env.VITE_APP_API_URL + 'uploads/images/users/' + res.data.avatarUrl
+      try {
+        const res = await axios.get('api/user')
+        this.$patch({
+          _id: res.data._id,
+          username: res.data.username,
+          image: res.data.avatarUrl ? 
+            import.meta.env.VITE_APP_API_URL + 'uploads/images/users/' + res.data.avatarUrl : ''
+        })
+      } catch (error) {
+        console.error('Error fetching user:', error)
       }
     },
 
@@ -40,11 +46,13 @@ export const useUserStore = defineStore('user', {
     },
 
     clearUser() {
-      this.$state._id = ''
-      this.$state.token = ''
-      this.$state.username = ''
-      this.$state.email = ''
-      this.$state.image = ''
+      this.$patch({
+        _id: '',
+        token: '',
+        username: '',
+        email: '',
+        image: ''
+      })
     }
   },
   persist: true

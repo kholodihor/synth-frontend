@@ -3,15 +3,24 @@
     <div class="wrapper">
       <h1>Edit Profile</h1>
       <div class="divider"></div>
-      <TextInput label="Your New Name" inputType="text" placeholder="Your Name" v-model:input="form.username" />
-      <span v-for="error in v$.username.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
+      <TextInput
+        label="Your New Name"
+        inputType="text"
+        placeholder="Your Name"
+        v-model:input="form.username"
+      />
+      <span v-for="error in v$.username.$errors" :key="error.uid" class="error">{{
+        error.$message
+      }}</span>
       <CroppedImage v-if="imageFile" :image="imageFile" />
       <CroppedImage v-else :image="form.image ? form.image : DefaultAvatar" />
       <div class="inputbox">
         <label for="image">
           Upload Image
-          <input type="file" hidden id="image" ref="fileInput" @change="handleImage">
-          <span v-for="error in v$.image.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
+          <input type="file" hidden id="image" ref="fileInput" @change="handleImage" />
+          <span v-for="error in v$.image.$errors" :key="error.uid" class="error">{{
+            error.$message
+          }}</span>
         </label>
       </div>
       <SubmitBtn text="update profile" @click="updateUser" />
@@ -22,7 +31,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios';
+import axios from 'axios'
 import Swal from '@/utils/swal'
 import { useUserStore } from '@/stores/userStore'
 import { useProfileStore } from '@/stores/profileStore'
@@ -53,7 +62,7 @@ onMounted(() => {
 const rules = {
   username: { required },
   image: { required }
-};
+}
 
 const v$ = useVuelidate(rules, form)
 
@@ -63,28 +72,27 @@ const handleImage = () => {
 }
 
 const setFileToBase64 = (file: any) => {
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
+  const reader = new FileReader()
+  reader.readAsDataURL(file)
   reader.onloadend = () => {
-    imageFile.value = reader.result;
-  };
-};
+    imageFile.value = reader.result
+  }
+}
 
 const getUploadedImage = async () => {
   if (imageFile.value) {
     try {
       if (imageFile.value) {
-        const { data } = await axios.post('/api/uploadbandimage', { image: imageFile.value },
-        );
-        form.image = data.url;
+        const { data } = await axios.post('/api/uploadbandimage', { image: imageFile.value })
+        form.image = data.url
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message);
+        console.log('Error message:', error.message)
       } else {
-        console.error('An error occurred:', error);
+        console.error('An error occurred:', error)
       }
-    };
+    }
   }
 }
 
@@ -92,35 +100,51 @@ const updateUser = async () => {
   if (imageFile.value) {
     await getUploadedImage()
   }
-  const result = await v$.value.$validate();
+  const result = await v$.value.$validate()
   if (result) {
-    const formData = new FormData();
+    const formData = new FormData()
     formData.append('username', form.username)
     formData.append('avatarUrl', form.image)
     try {
-      await axios.patch('api/user', formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-      await userStore.fetchUser()
-      router.push('/account/profile/' + userStore._id)
+      const response = await axios.patch('api/user', formData)
+      if (response.data) {
+        // Update the store with the new data
+        userStore.$patch({
+          username: response.data.username,
+          image: response.data.avatarUrl ? import.meta.env.VITE_APP_API_URL + 'uploads/images/users/' + response.data.avatarUrl : ''
+        })
+        
+        // Then fetch fresh data
+        await userStore.fetchUser()
+        
+        await Swal.fire({
+          title: 'Success!',
+          text: 'Profile updated successfully',
+          icon: 'success',
+          confirmButtonColor: '#219dff'
+        })
+        
+        router.push('/account/profile/' + userStore._id)
+      }
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message);
+        Swal.fire({
+          title: 'Error!',
+          text: error.response?.data?.message || 'Failed to update profile',
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
       } else {
-        console.error('An error occurred:', error);
+        console.error('An error occurred:', error)
       }
     }
   } else {
-    Swal.fire(
-      {
-        title: 'Something went wrong!',
-        text: 'You dont fill all fields that are required or inputs are invalid',
-        icon: 'warning',
-        confirmButtonColor: "#219dff",
-      }
-    )
+    Swal.fire({
+      title: 'Something went wrong!',
+      text: 'You dont fill all fields that are required or inputs are invalid',
+      icon: 'warning',
+      confirmButtonColor: '#219dff'
+    })
   }
 }
 </script>

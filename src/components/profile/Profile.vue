@@ -1,21 +1,46 @@
 <template>
-  <div class="page wrapper relative">
-    <LinkBtn text="Main Page" url="/" class="home-link" />
-    <div class="inner">
-      <div class="screen-overlay"></div>
-      <div class="image">
-        <div class="image-box">
-          <img :src="userStore.image" class="img" alt="" />
-        </div>
+  <div class="profile-container">
+    <div class="profile-header">
+      <LinkBtn text="Main Page" url="/" class="home-link">
+        <i class="fas fa-home"></i>
+        Home
+      </LinkBtn>
+      <LinkBtn
+        v-if="userStore._id == route.params.id"
+        text="Edit Profile"
+        url="/account/edit-profile"
+        class="edit-link"
+      >
+        <i class="fas fa-edit"></i>
+        Edit Profile
+      </LinkBtn>
+    </div>
+
+    <div class="profile-content">
+      <div class="profile-image">
+        <img
+          :src="userStore.image || '/DefaultUserAvatar.png'"
+          :alt="userStore.username"
+          class="avatar-image"
+        />
+        <div class="image-overlay"></div>
       </div>
-      <div class="info">
-        <div class="info-inner">
-          <h3>{{ userStore.username }}</h3>
-          <LinkBtn
-            v-if="userStore._id == route.params.id"
-            text="Edit Profile"
-            url="/account/edit-profile"
-          />
+
+      <div class="profile-info">
+        <h1 class="username">{{ userStore.username }}</h1>
+        <div class="stats">
+          <div class="stat-item">
+            <i class="fas fa-music"></i>
+            <span>{{ songCount }} Songs</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-video"></i>
+            <span>{{ videoCount }} Videos</span>
+          </div>
+          <div class="stat-item">
+            <i class="fas fa-users"></i>
+            <span>{{ bandCount }} Bands</span>
+          </div>
         </div>
       </div>
     </div>
@@ -23,130 +48,186 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { User } from '@/types'
 import LinkBtn from '@/components/shared/LinkBtn.vue'
+import { useSongStore } from '@/stores/songStore'
+import { useVideoStore } from '@/stores/videoStore'
+import { useBandsStore } from '@/stores/bandsStore'
 
 const route = useRoute()
+const songStore = useSongStore()
+const videoStore = useVideoStore()
+const bandsStore = useBandsStore()
 
 defineProps<{
-  userStore: User
+  userStore: Omit<User, 'token'>
 }>()
+
+const songCount = computed(() => songStore.songs.length)
+const videoCount = computed(() => videoStore.videos.length)
+const bandCount = computed(() => bandsStore.bands.length)
 </script>
 
 <style scoped lang="scss">
-.inner {
-  position: relative;
-  display: flex;
-  width: 90%;
-  border-radius: 5px;
-  padding: 1rem;
-  overflow: hidden;
-  background-color: rgba(0, 0, 0, 0.8);
-  z-index: 9999;
+.profile-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
 
-  @media screen and (max-width: 650px) {
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+
+  @media (max-width: 480px) {
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
     gap: 1rem;
   }
 
-  .image {
-    width: 50%;
-    padding: 1rem;
+  .home-link,
+  .edit-link {
     display: flex;
-    justify-content: center;
     align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba($blue, 0.2);
+    border: 1px solid rgba($blue, 0.3);
+    border-radius: 0.5rem;
+    color: $white;
+    transition: all 0.3s ease;
 
-    @media screen and (max-width: 650px) {
-      width: 100%;
+    &:hover {
+      background: rgba($blue, 0.3);
+      transform: translateY(-2px);
     }
 
-    @media screen and (max-width: 450px) {
-      width: 100vw;
-    }
-
-    .image-box {
-      width: 20rem;
-      border-radius: 20rem;
-
-      @media screen and (max-width: 650px) {
-        width: 80vw;
-      }
-
-      .img {
-        width: 80%;
-        object-fit: cover;
-        border-radius: 20rem;
-
-        @media screen and (max-width: 650px) {
-          width: 100%;
-        }
-      }
+    i {
+      font-size: 1.2rem;
     }
   }
+}
 
-  .info {
-    width: 50%;
+.profile-content {
+  display: flex;
+  gap: 3rem;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba($dark, 0.5);
+  border: 1px solid rgba($blue, 0.1);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.5rem;
+  }
+
+  @media (max-width: 480px) {
     padding: 1rem;
+  }
+}
 
-    &-inner {
-      width: 80%;
-      height: 100%;
-      display: flex;
+.profile-image {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba($blue, 0.3);
+  box-shadow: 0 0 20px rgba($blue, 0.2);
+
+  @media (max-width: 768px) {
+    width: 200px;
+    height: 200px;
+  }
+
+  .avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba($blue, 0.1), transparent, rgba($blue, 0.1));
+    pointer-events: none;
+  }
+}
+
+.profile-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+
+  @media (max-width: 768px) {
+    gap: 1.5rem;
+    width: 100%;
+  }
+
+  .username {
+    font-size: 3rem;
+    font-weight: 700;
+    color: $white;
+    text-shadow: 0 0 10px rgba($blue, 0.5);
+
+    @media (max-width: 768px) {
+      font-size: 2.5rem;
+      text-align: center;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 2rem;
+    }
+  }
+
+  .stats {
+    display: flex;
+    gap: 2rem;
+
+    @media (max-width: 768px) {
       justify-content: center;
-      flex-direction: column;
-      align-items: center;
-      gap: 2rem;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
 
-      @media screen and (max-width: 650px) {
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 1rem;
-      }
+    @media (max-width: 480px) {
+      gap: 1rem;
+    }
+  }
 
-      h3 {
-        color: $blue;
-        font-size: 2rem;
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: $white;
+    font-size: 1.2rem;
 
-        text-transform: uppercase;
+    @media (max-width: 480px) {
+      font-size: 1rem;
+    }
+
+    i {
+      color: $blue;
+      font-size: 1.5rem;
+
+      @media (max-width: 480px) {
+        font-size: 1.3rem;
       }
     }
   }
-}
-
-.home-link {
-  position: absolute;
-  top: 2rem;
-  left: 2rem;
-}
-
-@keyframes pan-overlay {
-  from {
-    background-position: 0% 0%;
-  }
-
-  to {
-    background-position: 0% -100%;
-  }
-}
-
-.screen-overlay {
-  background: linear-gradient(
-    rgba(33, 157, 255, 0.15),
-    rgba(33, 157, 255, 0.15) 3px,
-    transparent 3px,
-    transparent 9px
-  );
-  background-size: 100% 9px;
-  height: 100%;
-  width: 100%;
-  animation: pan-overlay 40s infinite linear;
-  position: absolute;
-  z-index: -1;
-  left: 0px;
-  top: 0px;
 }
 </style>

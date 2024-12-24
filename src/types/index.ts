@@ -13,6 +13,7 @@ export type Song = {
   artist: string
   title: string
   song: string
+  url: string
 }
 
 export type NewSong = {

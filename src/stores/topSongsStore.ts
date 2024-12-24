@@ -1,23 +1,24 @@
 import { defineStore } from 'pinia'
 import { topSongs } from '@/data/topSongs'
+import type { Song } from '@/types'
 
 type Songs = {
-  songs: any[]
+  songs: Song[]
 }
 
 export const useTopSongsStore = defineStore('topsongs', {
   state: (): Songs => ({
-    songs: []
+    songs: [...topSongs]
   }),
 
   actions: {
     async fetchSongs() {
-      this.$state.songs = topSongs
-      console.log(this.$state.songs)
+      this.songs = [...topSongs]
+      console.log('Loaded songs:', this.songs)
     },
 
     clearSongs() {
-      this.$state.songs = []
+      this.songs = []
     }
   },
   persist: true

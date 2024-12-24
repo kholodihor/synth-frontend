@@ -1,175 +1,184 @@
 <template>
-  <div class="box">
-    <div class="divider"></div>
-    <ul>
-      <li>
-        <a href="#">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span class="fab fa-facebook"></span>
-        </a>
-      </li>
-      <li>
-        <a href="#">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span class="fab fa-twitter"></span>
-        </a>
-      </li>
-      <li>
-        <a href="#">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span class="fab fa-instagram"></span>
-        </a>
-      </li>
-      <li>
-        <a href="#">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span class="fab fa-linkedin"></span>
-        </a>
-      </li>
-    </ul>
-    <div class="copy">
-      <p>Copyright &copy; {{ currentYear }} byCold</p>
+  <footer class="footer" role="contentinfo">
+    <div class="divider" aria-hidden="true"></div>
+    
+    <nav class="social-links" aria-label="Social media links">
+      <ul>
+        <li>
+          <a 
+            href="#" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            aria-label="Visit our Facebook page"
+          >
+            <div class="icon-wrapper">
+              <span class="fab fa-facebook" aria-hidden="true"></span>
+              <span class="sr-only">Facebook</span>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a 
+            href="#" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            aria-label="Visit our Twitter page"
+          >
+            <div class="icon-wrapper">
+              <span class="fab fa-twitter" aria-hidden="true"></span>
+              <span class="sr-only">Twitter</span>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a 
+            href="#" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            aria-label="Visit our Instagram page"
+          >
+            <div class="icon-wrapper">
+              <span class="fab fa-instagram" aria-hidden="true"></span>
+              <span class="sr-only">Instagram</span>
+            </div>
+          </a>
+        </li>
+        <li>
+          <a 
+            href="#" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            aria-label="Visit our LinkedIn page"
+          >
+            <div class="icon-wrapper">
+              <span class="fab fa-linkedin" aria-hidden="true"></span>
+              <span class="sr-only">LinkedIn</span>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="copyright">
+      <p>Copyright {{ currentYear }} byCold</p>
     </div>
-  </div>
+  </footer>
 </template>
 
 <script setup lang="ts">
-const currentYear: string = new Date().getFullYear().toString()
+import { computed } from 'vue'
+
+const currentYear = computed(() => new Date().getFullYear().toString())
 </script>
 
 <style scoped lang="scss">
-.divider {
-  width: 80%;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-.box {
+.footer {
   background-color: $black;
-  padding: 2rem;
+  padding: clamp(1.5rem, 4vw, 2rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
 
+.divider {
+  width: min(80%, 1200px);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba($blue, 0.5),
+    transparent
+  );
+}
+
+.social-links {
   ul {
-    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    transform-style: preserve-3d;
-    margin-bottom: 3rem;
+    gap: clamp(0.5rem, 2vw, 1rem);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+
+    @media (max-width: 480px) {
+      flex-wrap: wrap;
+    }
 
     li {
-      list-style: none;
-      position: relative;
-      width: 60px;
-      height: 60px;
-      margin: 0 10px;
+      perspective: 1000px;
+    }
 
-      span {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex !important;
-        justify-content: center;
-        align-items: center;
-        color: rgba(255, 255, 255, 0.3);
-        background: $black;
-        font-size: 30px !important;
-        transition: 0.3s;
-      }
+    a {
+      display: block;
+      text-decoration: none;
+      color: rgba($white, 0.3);
+      transition: color 0.3s ease;
 
-      &::before {
-        content: '';
-        position: absolute;
-        bottom: -10px;
-        left: 0;
-        width: 100%;
-        height: 10px;
-        background: $black;
-        transform-origin: top;
-        transform: skewX(-41deg);
-      }
-
-      &::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -9px;
-        width: 9px;
-        height: 100%;
-        background: #2a2a2a;
-        transform-origin: right;
-        transform: skewY(-49deg);
-      }
-
-      &:hover span {
-        z-index: 1000;
-        transition: 0.5s;
+      &:hover,
+      &:focus-visible {
         color: $white;
-        box-shadow: -1px 1px 1px rgba(255, 255, 255, 0.5);
-      }
+        outline: none;
 
-      &:hover span:nth-child(5) {
-        transform: translate(40px, -40px);
-        opacity: 1;
-      }
-
-      &:hover span:nth-child(4) {
-        transform: translate(30px, -30px);
-        opacity: 0.8;
-      }
-
-      &:hover span:nth-child(3) {
-        transform: translate(20px, -20px);
-        opacity: 0.6;
-      }
-
-      &:hover span:nth-child(2) {
-        transform: translate(10px, -10px);
-        opacity: 0.4;
-      }
-
-      &:hover span:nth-child(1) {
-        transform: translate(0px, 0px);
-        opacity: 0.2;
-      }
-
-      &:nth-child(1):hover span {
-        background: $purple;
-      }
-
-      &:nth-child(2):hover span {
-        background: $green;
-      }
-
-      &:nth-child(3):hover span {
-        background: $blue;
-      }
-
-      &:nth-child(4):hover span {
-        background: $pink;
+        .icon-wrapper {
+          transform: translateZ(20px);
+        }
       }
     }
   }
+}
 
-  .copy {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.icon-wrapper {
+  width: clamp(40px, 8vw, 60px);
+  height: clamp(40px, 8vw, 60px);
+  display: grid;
+  place-items: center;
+  background-color: $black;
+  border-radius: 8px;
+  font-size: clamp(20px, 4vw, 30px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 
-    p {
-      color: rgba(255, 255, 255, 0.3);
-    }
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(45deg, transparent 50%, rgba($white, 0.1));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+
+  a:nth-child(1) &:hover { background-color: $purple; }
+  a:nth-child(2) &:hover { background-color: $green; }
+  a:nth-child(3) &:hover { background-color: $blue; }
+  a:nth-child(4) &:hover { background-color: $pink; }
+}
+
+.copyright {
+  text-align: center;
+  color: rgba($white, 0.3);
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  
+  p {
+    margin: 0;
   }
 }
 </style>
