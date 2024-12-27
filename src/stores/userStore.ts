@@ -33,7 +33,7 @@ export const useUserStore = defineStore('user', {
         this.$patch({
           _id: res.data._id,
           username: res.data.username,
-          image: res.data.avatarUrl ? 
+          image: res.data.avatarUrl ?
             import.meta.env.VITE_APP_API_URL + 'uploads/images/users/' + res.data.avatarUrl : ''
         })
       } catch (error) {

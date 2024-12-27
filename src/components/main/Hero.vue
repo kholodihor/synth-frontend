@@ -1,15 +1,10 @@
 <template>
-  <div 
-    class="curtain" 
-    :class="{ active: showMenu }"
-    :aria-expanded="showMenu"
-    role="navigation"
-  >
+  <div class="curtain" :class="{ active: showMenu }" :aria-expanded="showMenu" role="navigation">
     <HeaderBG class="headerBG" />
     <span aria-hidden="true"></span>
     <span aria-hidden="true"></span>
     <span aria-hidden="true"></span>
-    
+
     <nav class="nav-menu" :class="{ visible: showMenu }">
       <div class="fireflies" aria-hidden="true">
         <Fireflies />
@@ -30,15 +25,8 @@
       </ul>
     </nav>
 
-    <button 
-      class="toggle" 
-      @click="showMenu = !showMenu"
-      :aria-label="showMenu ? 'Close menu' : 'Open menu'"
-    >
-      <i 
-        :class="showMenu ? 'fas fa-times' : 'fas fa-bars'"
-        aria-hidden="true"
-      ></i>
+    <button class="toggle" @click="showMenu = !showMenu" :aria-label="showMenu ? 'Close menu' : 'Open menu'">
+      <i :class="showMenu ? 'fas fa-times' : 'fas fa-bars'" aria-hidden="true"></i>
     </button>
   </div>
 </template>
@@ -135,7 +123,7 @@ onBeforeUnmount(() => {
 }
 
 .toggle {
-  position: fixed;
+  position: absolute;
   top: 1rem;
   right: 1rem;
   width: 3rem;
