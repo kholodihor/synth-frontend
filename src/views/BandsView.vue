@@ -9,8 +9,19 @@
         v-model="searchQuery"
         placeholder="Search bands..."
         class="search-input"
-        @input="debouncedSearch"
+        @keyup.enter="handleSearch"
       />
+      <button @click="handleSearch" class="search-button">
+        <i class="fas fa-search"></i>
+        Search
+      </button>
+    </div>
+
+    <div v-if="searchQuery && bands.length > 0" class="view-all-container">
+      <button @click="clearSearch" class="view-all-button">
+        <i class="fas fa-list"></i>
+        View All Bands
+      </button>
     </div>
 
     <div v-if="isLoading" class="loading-state">
@@ -90,19 +101,12 @@ const isLoading = ref(false)
 const error = ref('')
 const searchQuery = ref('')
 
-let searchTimeout: number | null = null
-
-const debouncedSearch = () => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
+const handleSearch = () => {
+  if (searchQuery.value.trim() === '') {
+    searchQuery.value = ''
   }
-  searchTimeout = setTimeout(() => {
-    if (searchQuery.value.trim() === '') {
-      searchQuery.value = ''
-    }
-    page.value = 1
-    getPaginateBands()
-  }, 300)
+  page.value = 1
+  getPaginateBands()
 }
 
 interface PaginatedResponse {
@@ -138,12 +142,24 @@ const getPaginateBands = async () => {
   }
 }
 
+const clearSearch = () => {
+  searchQuery.value = ''
+  page.value = 1
+  getPaginateBands()
+}
+
 onMounted(() => {
   getPaginateBands()
 })
 </script>
 
 <style scoped lang="scss">
+$dark-blue: #1a1f3c;
+$white: #fff;
+$blue: #219dff;
+$red: #ff3b3f;
+$black: #000;
+
 .page.wrapper {
   width: 100%;
   max-width: 1200px;
@@ -470,23 +486,96 @@ onMounted(() => {
 }
 
 .search-container {
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto 2rem;
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+
+  .search-input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: $white;
+    background: rgba($dark-blue, 0.6);
+    border: 1px solid rgba($blue, 0.3);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    outline: none;
+
+    &::placeholder {
+      color: rgba($white, 0.5);
+    }
+
+    &:focus {
+      border-color: $blue;
+      box-shadow: 0 0 0 2px rgba($blue, 0.2);
+      background: rgba($dark-blue, 0.8);
+    }
+  }
+
+  .search-button {
+    padding: 0.75rem 1.5rem;
+    background-color: $blue;
+    color: $white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: lighten($blue, 5%);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    i {
+      font-size: 1rem;
+    }
+  }
 }
 
-.search-input {
-  width: 100%;
-  padding: 12px 20px;
-  font-size: 16px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  transition: border-color 0.3s ease;
-  outline: none;
-}
+.view-all-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
 
-.search-input:focus {
-  border-color: #219dff;
+  .view-all-button {
+    padding: 0.75rem 1.5rem;
+    background-color: rgba($blue, 0.2);
+    color: $white;
+    border: 1px solid rgba($blue, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: rgba($blue, 0.3);
+      transform: translateY(-1px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+
+    i {
+      font-size: 1rem;
+    }
+  }
 }
 
 @keyframes spin {
