@@ -1,46 +1,160 @@
-# synth
+# Synth Pop Bands Platform
 
-This template should help get you started developing with Vue 3 in Vite.
+A modern web application for discovering and managing synth pop bands, their music, and related content. This platform features a responsive frontend built with Vue 3, TypeScript, and Vite, powered by a Node.js/Express backend with MongoDB.
 
-## Recommended IDE Setup
+## ✨ Features
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+- 🎵 Browse and search synth pop bands
+- 🎬 Watch music videos from your favorite artists
+- 🎧 Listen to top synth pop tracks with the integrated music player
+- 📱 Responsive design that works on all devices
+- 🔒 User authentication and authorization
+- 📝 Create and manage your own band profiles
+- 🖼️ Upload and manage band images and media
 
-## Type Support for `.vue` Imports in TS
+## 🚀 Tech Stack
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+### Frontend
+- Vue 3 with Composition API
+- TypeScript
+- Vite (Build tool)
+- Pinia (State Management)
+- Vue Router
+- Axios (HTTP Client)
+- SCSS (Styling)
+- Vue Advanced Cropper (Image Editing)
+- APlayer (Audio Player)
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+### Backend
+- Node.js with Express
+- MongoDB with Mongoose
+- JWT Authentication
+- File Uploads with Multer and Cloudinary
+- CORS Support
+- Request Validation with Joi
+- Environment Configuration with dotenv
 
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+## 🛠️ Prerequisites
 
-## Customize configuration
+- Node.js (v16+)
+- npm or yarn
+- MongoDB (local or MongoDB Atlas)
+- Cloudinary account (for image storage)
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+## 🚀 Getting Started
 
-## Project Setup
+### Backend Setup
 
-```sh
-npm install
+1. Navigate to the backend directory:
+   ```bash
+   cd synth-backend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create a `.env` file in the backend root with the following variables:
+   ```env
+   MONGODB_URI=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret
+   CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+   CLOUDINARY_API_KEY=your_cloudinary_api_key
+   CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+   PORT=4000
+   ```
+
+4. Start the backend server:
+   ```bash
+   npm start
+   ```
+
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd synth-frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create a `.env` file in the frontend root with the following variables:
+   ```env
+   VITE_APP_API_URL=http://localhost:4000
+   ```
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+5. Open your browser and navigate to `http://localhost:5173`
+
+## 📂 Project Structure
+
+### Frontend
+```
+synth-frontend/
+├── public/               # Static files
+├── src/
+│   ├── assets/           # Images, fonts, etc.
+│   ├── components/       # Reusable Vue components
+│   ├── router/           # Vue Router configuration
+│   ├── stores/           # Pinia stores
+│   ├── types/            # TypeScript type definitions
+│   ├── utils/            # Utility functions
+│   ├── views/            # Page components
+│   ├── App.vue           # Root Vue component
+│   └── main.ts           # Application entry point
+└── ...
 ```
 
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
+### Backend
+```
+synth-backend/
+├── config/              # Configuration files
+├── controllers/         # Route controllers
+├── middleware/          # Custom middleware
+├── models/              # Mongoose models
+├── routes/              # API routes
+├── uploads/             # Uploaded files (temporary)
+├── validations/         # Request validations
+├── index.ts             # Application entry point
+└── ...
 ```
 
-### Type-Check, Compile and Minify for Production
+## 🛠️ Development Scripts
 
-```sh
-npm run build
-```
+### Frontend
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Lint code with ESLint
+- `npm run format` - Format code with Prettier
+- `npm run type-check` - Type-check TypeScript files
 
-### Lint with [ESLint](https://eslint.org/)
+### Backend
+- `npm start` - Start development server with nodemon
+- `npm run build` - Compile TypeScript to JavaScript
 
-```sh
-npm run lint
-```
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- All the amazing synth pop artists who inspire us
+- The Vue.js and Node.js communities
+- Open source contributors

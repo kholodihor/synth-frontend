@@ -34,7 +34,7 @@
     }}</span>
     <span v-if="form.password !== form.confirmPassword" class="error">Passwords mismatch</span>
     <button @click="register" class="form-button">
-      {{ isProcessing ? 'processing' : 'login' }}
+      {{ isProcessing ? 'processing' : 'register' }}
     </button>
     <RouterLink to="/login"
       >Already have an account? <span class="login-link">Login!</span></RouterLink
