@@ -44,8 +44,10 @@ const computedInput = computed({
 
   .text__input {
     width: 90%;
-    padding: 0.5rem;
+    padding: 1rem;
+    background: #131313;
     border-radius: 0.5rem;
+    color: $white;
   }
 
   .label {

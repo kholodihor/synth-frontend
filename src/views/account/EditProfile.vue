@@ -12,18 +12,20 @@
       <span v-for="error in v$.username.$errors" :key="error.uid" class="error">{{
         error.$message
       }}</span>
-      <CroppedImage v-if="imageFile" :image="imageFile" />
-      <CroppedImage v-else :image="form.image ? form.image : DefaultAvatar" />
-      <div class="inputbox">
-        <label for="image">
-          Upload Image
-          <input type="file" hidden id="image" ref="fileInput" @change="handleImage" />
-          <span v-for="error in v$.image.$errors" :key="error.uid" class="error">{{
-            error.$message
-          }}</span>
-        </label>
-      </div>
-      <SubmitBtn text="update profile" @click="updateUser" />
+      <CroppedImage v-if="imageFile || currentImageUrl" :image="imageFile || currentImageUrl" />
+      <CroppedImage v-else :image="DefaultAvatar" />
+      <FileUpload
+        id="profile-image-upload"
+        label="Upload Profile Image"
+        accept="image/*"
+        :error="v$.image.$errors[0]?.$message"
+        @file-selected="handleFileSelected"
+      />
+      <SubmitBtn
+        :text="isProcessing ? 'Updating...' : 'Update Profile'"
+        :disabled="isProcessing"
+        @click="updateUser"
+      />
     </div>
   </div>
 </template>
@@ -41,22 +43,30 @@ import DefaultAvatar from '/DefaultUserAvatar.png'
 import TextInput from '@/components/shared/TextInput.vue'
 import SubmitBtn from '@/components/shared/SubmitBtn.vue'
 import CroppedImage from '@/components/shared/CroppedImage.vue'
+import FileUpload from '@/components/shared/FileUpload.vue'
 
 const userStore = useUserStore()
 const profileStore = useProfileStore()
 const router = useRouter()
 
-const form = reactive({
+interface ProfileForm {
+  username: string
+  image: string | File | null
+}
+
+const form = reactive<ProfileForm>({
   username: '',
-  image: ''
+  image: null
 })
 
-const imageFile = ref()
-const fileInput = ref()
+const imageFile = ref<string>('')
+const currentImageUrl = ref<string>('')
+const isProcessing = ref(false)
 
 onMounted(() => {
   form.username = profileStore.username || ''
-  form.image = profileStore.image || ''
+  currentImageUrl.value = profileStore.image || ''
+  form.image = currentImageUrl.value
 })
 
 const rules = {
@@ -66,85 +76,116 @@ const rules = {
 
 const v$ = useVuelidate(rules, form)
 
-const handleImage = () => {
-  const file = fileInput.value.files[0]
-  setFileToBase64(file)
-}
-
-const setFileToBase64 = (file: any) => {
-  const reader = new FileReader()
-  reader.readAsDataURL(file)
-  reader.onloadend = () => {
-    imageFile.value = reader.result
+const handleFileSelected = (file: File | null) => {
+  if (file) {
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        imageFile.value = reader.result
+        // We don't set form.image to the File object anymore
+        // Instead, we'll use the base64 string from imageFile.value in getUploadedImage
+      }
+    }
+    reader.readAsDataURL(file)
+  } else {
+    imageFile.value = ''
+    form.image = currentImageUrl.value
   }
 }
 
-const getUploadedImage = async () => {
-  if (imageFile.value) {
-    try {
-      if (imageFile.value) {
-        const { data } = await axios.post('/api/uploadbandimage', { image: imageFile.value })
-        form.image = data.url
-      }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message)
-      } else {
-        console.error('An error occurred:', error)
-      }
+const getUploadedImage = async (): Promise<boolean> => {
+  try {
+    if (imageFile.value) {
+      // Send the base64 image directly in the request body, like in EditBand.vue
+      const { data } = await axios.post('/api/uploadavatar', { image: imageFile.value })
+      currentImageUrl.value = data.url
+      form.image = data.url
+      return true
+    } else if (typeof form.image === 'string' && form.image) {
+      // If it's already a string URL, no need to upload
+      currentImageUrl.value = form.image
+      return true
     }
+    return false // No valid image
+  } catch (error) {
+    console.error('Upload error:', error)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Upload Failed',
+      text: 'Failed to upload the image. Please try again.'
+    })
+    return false
   }
 }
 
 const updateUser = async () => {
-  if (imageFile.value) {
-    await getUploadedImage()
-  }
-  const result = await v$.value.$validate()
-  if (result) {
-    const formData = new FormData()
-    formData.append('username', form.username)
-    formData.append('avatarUrl', form.image)
-    try {
-      const response = await axios.patch('api/user', formData)
-      if (response.data) {
-        // Update the store with the new data
-        userStore.$patch({
-          username: response.data.username,
-          image: response.data.avatarUrl ? import.meta.env.VITE_APP_API_URL + 'uploads/images/users/' + response.data.avatarUrl : ''
-        })
-        
-        // Then fetch fresh data
-        await userStore.fetchUser()
-        
-        await Swal.fire({
-          title: 'Success!',
-          text: 'Profile updated successfully',
-          icon: 'success',
-          confirmButtonColor: '#219dff'
-        })
-        
-        router.push('/account/profile/' + userStore._id)
-      }
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        Swal.fire({
-          title: 'Error!',
-          text: error.response?.data?.message || 'Failed to update profile',
-          icon: 'error',
-          confirmButtonColor: '#219dff'
-        })
-      } else {
-        console.error('An error occurred:', error)
-      }
+  if (isProcessing.value) return
+
+  isProcessing.value = true
+
+  try {
+    const uploadSuccess = await getUploadedImage()
+    if (!uploadSuccess) {
+      isProcessing.value = false
+      return
     }
-  } else {
-    Swal.fire({
-      title: 'Something went wrong!',
-      text: 'You dont fill all fields that are required or inputs are invalid',
-      icon: 'warning',
-      confirmButtonColor: '#219dff'
+
+    const result = await v$.value.$validate()
+    if (!result) {
+      await Swal.fire({
+        title: 'Validation Error',
+        text: 'Please fill in all required fields correctly.',
+        icon: 'warning',
+        confirmButtonColor: '#219dff'
+      })
+      return
+    }
+
+    const response = await axios.patch('api/user', {
+      username: form.username,
+      avatarUrl: currentImageUrl.value || ''
     })
+
+    if (response.data) {
+      // Update the store with the new data
+      userStore.$patch({
+        username: response.data.username,
+        image: response.data.avatarUrl
+          ? `${import.meta.env.VITE_APP_API_URL}uploads/images/users/${response.data.avatarUrl}`
+          : ''
+      })
+
+      // Then fetch fresh data
+      await userStore.fetchUser()
+
+      await Swal.fire({
+        title: 'Profile Updated!',
+        text: 'Your profile has been updated successfully.',
+        icon: 'success',
+        confirmButtonColor: '#219dff'
+      })
+
+      router.push(`/account/profile/${userStore._id}`)
+    }
+  } catch (error) {
+    console.error('Update error:', error)
+    if (axios.isAxiosError(error)) {
+      await Swal.fire({
+        title: 'Update Failed',
+        text: error.response?.data?.message || 'Failed to update profile. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#219dff'
+      })
+    } else {
+      await Swal.fire({
+        title: 'Error',
+        text: 'An unexpected error occurred. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#219dff'
+      })
+    }
+  } finally {
+    isProcessing.value = false
   }
 }
 </script>

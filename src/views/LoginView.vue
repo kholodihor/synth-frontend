@@ -60,37 +60,89 @@ const rules = {
 const v$ = useVuelidate(rules, form)
 
 const login = async () => {
+  errorMessage.value = ''
   const result = await v$.value.$validate()
-  if (result) {
-    try {
-      isProcessing.value = true
-      const res = await axios.post('api/user/login', {
-        email: form.email,
-        password: form.password
-      })
-      axios.defaults.headers.common['Authorization'] = 'Bearer ' + res.data.token
-      userStore.setUserDetails(res)
-      await profileStore.fetchProfileById()
-      await songStore.fetchSongsByUserId()
-      await bandsStore.fetchBandsByUserId()
-      await videoStore.fetchVideosByUserId()
-      isProcessing.value = false
-      router.push('/account/profile/' + userStore._id)
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message)
-        errorMessage.value = error.message
-      } else {
-        console.error('An error occurred:', error)
-      }
+  
+  if (!result) {
+    errorMessage.value = 'Please fill in all required fields correctly.'
+    return
+  }
+
+  isProcessing.value = true
+  
+  try {
+    const res = await axios.post('api/user/login', {
+      email: form.email.trim().toLowerCase(),
+      password: form.password
+    })
+    
+    if (!res.data?.token) {
+      throw new Error('No authentication token received')
     }
-  } else {
-    Swal.fire({
-      title: 'Something went wrong!',
-      text: 'You dont fill all fields that are required or inputs are invalid',
-      icon: 'warning',
+    
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + res.data.token
+    userStore.setUserDetails(res)
+    
+    // Fetch all user data in parallel
+    await Promise.all([
+      profileStore.fetchProfileById(),
+      songStore.fetchSongsByUserId(),
+      bandsStore.fetchBandsByUserId(),
+      videoStore.fetchVideosByUserId()
+    ])
+    
+    router.push('/account/profile/' + userStore._id)
+    
+  } catch (error: unknown) {
+    let errorMessageText = 'An error occurred during login. Please try again.'
+    
+    if (axios.isAxiosError(error)) {
+      const responseData = error.response?.data
+      
+      // Handle standardized error responses
+      if (responseData && typeof responseData === 'object') {
+        // Use the message from the response if available
+        if (responseData.message) {
+          errorMessageText = responseData.message
+          
+          // If the backend specifies which field has an error, highlight it
+          if (responseData.field) {
+            // Set specific validation error for the field
+            if (responseData.field === 'email') {
+              v$.email.$errors = [{ $message: errorMessageText }]
+            } else if (responseData.field === 'password') {
+              v$.password.$errors = [{ $message: errorMessageText }]
+            }
+          }
+        } else if (responseData.error) {
+          errorMessageText = responseData.error
+        }
+      } else {
+        // Fallback to status-based messages
+        if (error.response?.status === 401) {
+          errorMessageText = 'Invalid email or password. Please try again.'
+          v$.password.$errors = [{ $message: errorMessageText }]
+        } else if (error.response?.status === 404) {
+          errorMessageText = 'User not found. Please check your email.'
+          v$.email.$errors = [{ $message: errorMessageText }]
+        } else if (error.response?.status === 500) {
+          errorMessageText = 'Server error. Please try again later.'
+        }
+      }
+    } else if (error instanceof Error) {
+      errorMessageText = error.message
+    }
+    
+    errorMessage.value = errorMessageText
+    
+    await Swal.fire({
+      title: 'Login Failed',
+      text: errorMessageText,
+      icon: 'error',
       confirmButtonColor: '#219dff'
     })
+  } finally {
+    isProcessing.value = false
   }
 }
 </script>

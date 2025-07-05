@@ -70,6 +70,7 @@ const form = reactive({
   confirmPassword: ''
 })
 
+const errorMessage = ref('')
 const isProcessing = ref(false)
 
 const rules = computed(() => {
@@ -84,38 +85,147 @@ const rules = computed(() => {
 const v$ = useVuelidate(rules, form)
 
 const register = async () => {
+  errorMessage.value = ''
   const result = await v$.value.$validate()
-  if (result) {
-    isProcessing.value = true
-    try {
-      const response = await axios.post('/api/user/register', {
-        username: form.username,
-        email: form.email,
-        password: form.password
-      })
-      axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.token
-      console.log('Response:', response.data)
-      userStore.setUserDetails(response)
-      await profileStore.fetchProfileById()
-      await songStore.fetchSongsByUserId()
-      await bandsStore.fetchBandsByUserId()
-      await videoStore.fetchVideosByUserId()
-      isProcessing.value = false
-      router.push('/account/profile/' + userStore._id)
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message)
-      } else {
-        console.error('An error occurred:', error)
-      }
-    }
-  } else {
-    Swal.fire({
-      title: 'Something went wrong!',
-      text: 'You dont fill all fields that are required or inputs are invalid',
-      icon: 'warning',
-      confirmButtonColor: '#219dff'
+  
+  if (!result) {
+    errorMessage.value = 'Please fill in all required fields correctly.'
+    return
+  }
+  
+  if (form.password !== form.confirmPassword) {
+    errorMessage.value = 'Passwords do not match.'
+    return
+  }
+
+  isProcessing.value = true
+  
+  try {
+    // Make the registration request
+    const response = await axios.post('/api/user/register', {
+      username: form.username.trim(),
+      email: form.email.trim().toLowerCase(),
+      password: form.password
     })
+    
+    // Check if we got a token in the response
+    if (!response.data?.token) {
+      throw new Error('No authentication token received')
+    }
+    
+    // Set the authorization header for future requests
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.token
+    
+    // Update user store with the response data
+    userStore.setUserDetails(response)
+    
+    // Show success message
+    await Swal.fire({
+      title: 'Registration Successful!',
+      text: 'Your account has been created successfully.',
+      icon: 'success',
+      confirmButtonColor: '#219dff',
+      timer: 2000,
+      timerProgressBar: true
+    })
+    
+    // Fetch user data in the background, but don't wait for it
+    Promise.all([
+      profileStore.fetchProfileById(),
+      songStore.fetchSongsByUserId(),
+      bandsStore.fetchBandsByUserId(),
+      videoStore.fetchVideosByUserId()
+    ]).catch(console.error) // Log any errors but don't block the navigation
+    
+    // Redirect to profile
+    router.push('/account/profile/' + userStore._id)
+    
+  } catch (error: unknown) {
+    console.error('Registration error:', error) // Log the full error for debugging
+    let errorMessageText = 'An error occurred during registration. Please try again.'
+    let fieldWithError = ''
+    
+    if (axios.isAxiosError(error)) {
+      const response = error.response
+      const responseData = response?.data
+      
+      // Log the full response for debugging
+      console.log('Error response:', {
+        status: response?.status,
+        statusText: response?.statusText,
+        data: responseData
+      })
+      
+      // Handle different response formats
+      if (typeof responseData === 'string') {
+        errorMessageText = responseData
+      } else if (responseData && typeof responseData === 'object') {
+        // Handle standardized error format
+        if (responseData.message) {
+          errorMessageText = String(responseData.message)
+          
+          // If the backend specifies which field has an error, highlight it
+          if (responseData.field) {
+            fieldWithError = responseData.field
+            // Set specific validation error for the field
+            if (fieldWithError === 'email') {
+              v$.email.$errors = [{ $message: errorMessageText }]
+            } else if (fieldWithError === 'password') {
+              v$.password.$errors = [{ $message: errorMessageText }]
+            } else if (fieldWithError === 'username') {
+              v$.username.$errors = [{ $message: errorMessageText }]
+            }
+          }
+        } else if (responseData.error) {
+          errorMessageText = String(responseData.error)
+        } else if (Array.isArray(responseData.errors)) {
+          errorMessageText = responseData.errors.map((e: { msg?: string; message?: string } | string) => {
+            if (typeof e === 'string') return e;
+            return e.msg || e.message || JSON.stringify(e);
+          }).join(', ');
+        } else if (Object.keys(responseData).length > 0) {
+          // If we have an object with data, try to stringify it
+          errorMessageText = JSON.stringify(responseData)
+        }
+      }
+      
+      // Handle specific HTTP status codes with default messages
+      if (!errorMessageText || errorMessageText.includes('Network Error')) {
+        if (response?.status === 400) {
+          errorMessageText = 'Invalid registration data. Please check your input.'
+        } else if (response?.status === 401) {
+          errorMessageText = 'Authentication failed. Please try again.'
+        } else if (response?.status === 409) {
+          errorMessageText = 'An account with this email already exists.'
+        } else if (response?.status === 500) {
+          errorMessageText = 'Server error. Please try again later.'
+        }
+      }
+      
+      // Fallback to status text if we still don't have a message
+      if ((!errorMessageText || errorMessageText === 'Error') && response?.statusText) {
+        errorMessageText = response.statusText
+      }
+    } else if (error instanceof Error) {
+      errorMessageText = error.message
+    }
+    
+    // Clean up the error message
+    errorMessageText = errorMessageText.replace(/^Error: /, '').trim()
+    
+    // Update the reactive error message for inline display
+    errorMessage.value = errorMessageText
+    
+    // Show error in a toast notification
+    await Swal.fire({
+      title: 'Registration Failed',
+      text: errorMessageText || 'An unknown error occurred',
+      icon: 'error',
+      confirmButtonColor: '#219dff',
+      allowOutsideClick: false
+    })
+  } finally {
+    isProcessing.value = false
   }
 }
 </script>

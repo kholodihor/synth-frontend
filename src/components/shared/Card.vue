@@ -23,9 +23,11 @@
             <p>{{ band?.user?.username }}</p>
           </div>
         </div>
-        <router-link class="readmore" :to="'/band/' + band._id">Read More...</router-link>
+        <router-link class="readmore" :to="'/band/' + band._id">🎵 Read More</router-link>
       </div>
-      <router-link v-else class="readmore" :to="'/band/' + band._id">Read More...</router-link>
+      <router-link v-else class="readmore right" :to="'/band/' + band._id"
+        >🎵 Read More</router-link
+      >
     </div>
   </div>
 </template>
@@ -58,6 +60,7 @@ const deleteBand = (_id: string, title: string) => {
   box-shadow: 0 0 2px $white;
   border-radius: 3px;
   margin: 0 auto;
+  max-height: 32rem;
 
   .image {
     width: 100%;
@@ -102,6 +105,11 @@ const deleteBand = (_id: string, title: string) => {
       color: $green;
       text-shadow: 0 0 5px $green;
     }
+  }
+
+  .right {
+    margin-left: auto;
+    margin-right: 0.5rem;
   }
 
   .country {
