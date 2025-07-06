@@ -19,6 +19,7 @@
       inputType="password"
       placeholder="Your Password"
       v-model:input="form.password"
+      :show-toggle="true"
     />
     <span v-for="error in v$.password.$errors" :key="error.uid" class="error">{{
       error.$message
@@ -28,6 +29,7 @@
       inputType="password"
       placeholder="Confirm Your Password"
       v-model:input="form.confirmPassword"
+      :show-toggle="true"
     />
     <span v-for="error in v$.confirmPassword.$errors" :key="error.uid" class="error">{{
       error.$message
@@ -44,24 +46,18 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
-import axios from 'axios'
-import Swal from '@/utils/swal'
 import { useRouter, RouterLink } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
-import { useProfileStore } from '@/stores/profileStore'
-import { useSongStore } from '@/stores/songStore'
-import { useVideoStore } from '@/stores/videoStore'
-import { useBandsStore } from '@/stores/bandsStore'
 import { useVuelidate } from '@vuelidate/core'
 import { required, email, minLength, sameAs } from '@vuelidate/validators'
+import * as Effect from 'effect/Effect'
+import axios from 'axios'
+import Swal from '@/utils/swal'
 import TextInput from '@/components/shared/TextInput.vue'
+import { useUserStore } from '@/stores/userStore'
+import { AuthService, runAuthEffect } from '@/services/effect/auth.service'
 
 const router = useRouter()
 const userStore = useUserStore()
-const profileStore = useProfileStore()
-const songStore = useSongStore()
-const videoStore = useVideoStore()
-const bandsStore = useBandsStore()
 
 const form = reactive({
   username: '',
@@ -73,156 +69,123 @@ const form = reactive({
 const errorMessage = ref('')
 const isProcessing = ref(false)
 
-const rules = computed(() => {
-  return {
-    username: { required },
-    email: { required, email },
-    password: { required, minLength: minLength(6) },
-    confirmPassword: { required, minLength: minLength(6), sameAs: sameAs(form.password) }
+const rules = computed(() => ({
+  username: {
+    required,
+    minLength: minLength(3),
+    maxLength: (value: string) => value.length <= 30 || 'Username cannot exceed 30 characters'
+  },
+  email: {
+    required,
+    email
+  },
+  password: {
+    required,
+    minLength: minLength(6)
+  },
+  confirmPassword: {
+    required,
+    sameAs: sameAs(form.password, 'Passwords do not match')
   }
-})
+}))
 
 const v$ = useVuelidate(rules, form)
 
 const register = async () => {
   errorMessage.value = ''
   const result = await v$.value.$validate()
-  
+
   if (!result) {
     errorMessage.value = 'Please fill in all required fields correctly.'
     return
   }
-  
+
   if (form.password !== form.confirmPassword) {
-    errorMessage.value = 'Passwords do not match.'
+    errorMessage.value = 'Passwords do not match'
     return
   }
 
   isProcessing.value = true
-  
+
   try {
-    // Make the registration request
-    const response = await axios.post('/api/user/register', {
-      username: form.username.trim(),
-      email: form.email.trim().toLowerCase(),
-      password: form.password
-    })
-    
-    // Check if we got a token in the response
-    if (!response.data?.token) {
-      throw new Error('No authentication token received')
-    }
-    
-    // Set the authorization header for future requests
-    axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.token
-    
-    // Update user store with the response data
-    userStore.setUserDetails(response)
-    
-    // Show success message
-    await Swal.fire({
-      title: 'Registration Successful!',
-      text: 'Your account has been created successfully.',
-      icon: 'success',
-      confirmButtonColor: '#219dff',
-      timer: 2000,
-      timerProgressBar: true
-    })
-    
-    // Fetch user data in the background, but don't wait for it
-    Promise.all([
-      profileStore.fetchProfileById(),
-      songStore.fetchSongsByUserId(),
-      bandsStore.fetchBandsByUserId(),
-      videoStore.fetchVideosByUserId()
-    ]).catch(console.error) // Log any errors but don't block the navigation
-    
-    // Redirect to profile
-    router.push('/account/profile/' + userStore._id)
-    
-  } catch (error: unknown) {
-    console.error('Registration error:', error) // Log the full error for debugging
-    let errorMessageText = 'An error occurred during registration. Please try again.'
-    let fieldWithError = ''
-    
-    if (axios.isAxiosError(error)) {
-      const response = error.response
-      const responseData = response?.data
-      
-      // Log the full response for debugging
-      console.log('Error response:', {
-        status: response?.status,
-        statusText: response?.statusText,
-        data: responseData
+    // Run the registration effect
+    const registerEffect = Effect.gen(function* () {
+      const authService = yield* AuthService
+      const { token, userId, user } = yield* authService.register(
+        form.username,
+        form.email,
+        form.password
+      )
+
+      // Set the authorization header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+      // Set user details in the store with required fields
+      userStore.setUserDetails({
+        data: {
+          token,
+          _id: userId,
+          username: user?.username || form.username,
+          email: form.email,
+          image: ''
+        }
       })
-      
-      // Handle different response formats
-      if (typeof responseData === 'string') {
-        errorMessageText = responseData
-      } else if (responseData && typeof responseData === 'object') {
-        // Handle standardized error format
-        if (responseData.message) {
-          errorMessageText = String(responseData.message)
-          
-          // If the backend specifies which field has an error, highlight it
-          if (responseData.field) {
-            fieldWithError = responseData.field
-            // Set specific validation error for the field
-            if (fieldWithError === 'email') {
-              v$.email.$errors = [{ $message: errorMessageText }]
-            } else if (fieldWithError === 'password') {
-              v$.password.$errors = [{ $message: errorMessageText }]
-            } else if (fieldWithError === 'username') {
-              v$.username.$errors = [{ $message: errorMessageText }]
-            }
-          }
-        } else if (responseData.error) {
-          errorMessageText = String(responseData.error)
-        } else if (Array.isArray(responseData.errors)) {
-          errorMessageText = responseData.errors.map((e: { msg?: string; message?: string } | string) => {
-            if (typeof e === 'string') return e;
-            return e.msg || e.message || JSON.stringify(e);
-          }).join(', ');
-        } else if (Object.keys(responseData).length > 0) {
-          // If we have an object with data, try to stringify it
-          errorMessageText = JSON.stringify(responseData)
+
+      // Show success message
+      yield* Effect.promise(() =>
+        Swal.fire({
+          title: 'Registration Successful!',
+          text: 'Your account has been created successfully.',
+          icon: 'success',
+          confirmButtonColor: '#219dff',
+          timer: 2000,
+          timerProgressBar: true
+        })
+      )
+
+      // Fetch additional user data
+      yield* authService.fetchUserData()
+
+      return userId
+    })
+
+    // Execute the effect with proper error handling
+    const registerResult = await runAuthEffect(registerEffect)
+
+    if (registerResult.success) {
+      // Registration successful, navigate to profile
+      router.push(`/account/profile/${registerResult.data}`)
+    } else if (registerResult.error) {
+      // Handle error
+      const { error } = registerResult
+      errorMessage.value = error.message
+
+      // Set field-specific errors if available
+      if (error.field) {
+        if (error.field === 'email') {
+          v$.email.$errors = [{ $message: error.message }]
+        } else if (error.field === 'password') {
+          v$.password.$errors = [{ $message: error.message }]
+        } else if (error.field === 'username') {
+          v$.username.$errors = [{ $message: error.message }]
         }
       }
-      
-      // Handle specific HTTP status codes with default messages
-      if (!errorMessageText || errorMessageText.includes('Network Error')) {
-        if (response?.status === 400) {
-          errorMessageText = 'Invalid registration data. Please check your input.'
-        } else if (response?.status === 401) {
-          errorMessageText = 'Authentication failed. Please try again.'
-        } else if (response?.status === 409) {
-          errorMessageText = 'An account with this email already exists.'
-        } else if (response?.status === 500) {
-          errorMessageText = 'Server error. Please try again later.'
-        }
-      }
-      
-      // Fallback to status text if we still don't have a message
-      if ((!errorMessageText || errorMessageText === 'Error') && response?.statusText) {
-        errorMessageText = response.statusText
-      }
-    } else if (error instanceof Error) {
-      errorMessageText = error.message
+
+      await Swal.fire({
+        title: 'Registration Failed',
+        text: error.message,
+        icon: 'error',
+        confirmButtonColor: '#219dff'
+      })
     }
-    
-    // Clean up the error message
-    errorMessageText = errorMessageText.replace(/^Error: /, '').trim()
-    
-    // Update the reactive error message for inline display
-    errorMessage.value = errorMessageText
-    
-    // Show error in a toast notification
+  } catch (error) {
+    console.error('Registration error:', error)
+    errorMessage.value = 'An unexpected error occurred during registration'
     await Swal.fire({
-      title: 'Registration Failed',
-      text: errorMessageText || 'An unknown error occurred',
+      title: 'Registration Error',
+      text: 'An unexpected error occurred. Please try again.',
       icon: 'error',
-      confirmButtonColor: '#219dff',
-      allowOutsideClick: false
+      confirmButtonColor: '#219dff'
     })
   } finally {
     isProcessing.value = false

@@ -10,11 +10,12 @@
       inputType="password"
       placeholder="Your Password"
       v-model:input="form.password"
+      :show-toggle="true"
     />
     <span v-for="error in v$.password.$errors" :key="error.uid" class="error">{{
       error.$message
     }}</span>
-    <span v-if="errorMessage" class="error">{{ handleErrors(errorMessage) }}</span>
+    <span v-if="errorMessage" class="error">{{ errorMessage }}</span>
     <button @click="login" class="form-button">{{ isProcessing ? 'processing' : 'login' }}</button>
     <RouterLink to="/register"
       >Do not have an account? <span class="register-link">Register!</span></RouterLink
@@ -24,18 +25,15 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
+import { useVuelidate } from '@vuelidate/core'
+import { required, email, minLength } from '@vuelidate/validators'
+import * as Effect from 'effect/Effect'
 import axios from 'axios'
 import Swal from '@/utils/swal'
-import { useRouter, RouterLink } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
-import { useProfileStore } from '@/stores/profileStore'
-import { useSongStore } from '@/stores/songStore'
-import { useVideoStore } from '@/stores/videoStore'
-import { useBandsStore } from '@/stores/bandsStore'
-import { useVuelidate } from '@vuelidate/core'
-import { handleErrors } from '@/utils/handleErrors'
-import { required, email, minLength } from '@vuelidate/validators'
 import TextInput from '@/components/shared/TextInput.vue'
+import { useUserStore } from '@/stores/userStore'
+import { AuthService, runAuthEffect } from '@/services/effect/auth.service'
 
 const form = reactive({
   email: '',
@@ -47,10 +45,7 @@ const isProcessing = ref(false)
 
 const router = useRouter()
 const userStore = useUserStore()
-const profileStore = useProfileStore()
-const songStore = useSongStore()
-const videoStore = useVideoStore()
-const bandsStore = useBandsStore()
+// Other stores are now used within the auth service
 
 const rules = {
   email: { required, email },
@@ -62,82 +57,73 @@ const v$ = useVuelidate(rules, form)
 const login = async () => {
   errorMessage.value = ''
   const result = await v$.value.$validate()
-  
+
   if (!result) {
     errorMessage.value = 'Please fill in all required fields correctly.'
     return
   }
 
   isProcessing.value = true
-  
+
   try {
-    const res = await axios.post('api/user/login', {
-      email: form.email.trim().toLowerCase(),
-      password: form.password
-    })
-    
-    if (!res.data?.token) {
-      throw new Error('No authentication token received')
-    }
-    
-    axios.defaults.headers.common['Authorization'] = 'Bearer ' + res.data.token
-    userStore.setUserDetails(res)
-    
-    // Fetch all user data in parallel
-    await Promise.all([
-      profileStore.fetchProfileById(),
-      songStore.fetchSongsByUserId(),
-      bandsStore.fetchBandsByUserId(),
-      videoStore.fetchVideosByUserId()
-    ])
-    
-    router.push('/account/profile/' + userStore._id)
-    
-  } catch (error: unknown) {
-    let errorMessageText = 'An error occurred during login. Please try again.'
-    
-    if (axios.isAxiosError(error)) {
-      const responseData = error.response?.data
-      
-      // Handle standardized error responses
-      if (responseData && typeof responseData === 'object') {
-        // Use the message from the response if available
-        if (responseData.message) {
-          errorMessageText = responseData.message
-          
-          // If the backend specifies which field has an error, highlight it
-          if (responseData.field) {
-            // Set specific validation error for the field
-            if (responseData.field === 'email') {
-              v$.email.$errors = [{ $message: errorMessageText }]
-            } else if (responseData.field === 'password') {
-              v$.password.$errors = [{ $message: errorMessageText }]
-            }
-          }
-        } else if (responseData.error) {
-          errorMessageText = responseData.error
+    // Run the login effect
+    const loginEffect = Effect.gen(function* () {
+      const authService = yield* AuthService
+      const { token, userId, user } = yield* authService.login(form.email, form.password)
+
+      // Set the authorization header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+      // Set user details in the store with required fields
+      userStore.setUserDetails({
+        data: {
+          token,
+          _id: userId,
+          username: user?.username || '',
+          email: form.email,
+          image: ''
         }
-      } else {
-        // Fallback to status-based messages
-        if (error.response?.status === 401) {
-          errorMessageText = 'Invalid email or password. Please try again.'
-          v$.password.$errors = [{ $message: errorMessageText }]
-        } else if (error.response?.status === 404) {
-          errorMessageText = 'User not found. Please check your email.'
-          v$.email.$errors = [{ $message: errorMessageText }]
-        } else if (error.response?.status === 500) {
-          errorMessageText = 'Server error. Please try again later.'
+      })
+
+      // Fetch additional user data
+      yield* authService.fetchUserData()
+
+      return userId
+    })
+
+    // Execute the effect with proper error handling
+    const loginResult = await runAuthEffect(loginEffect)
+
+    if (loginResult.success) {
+      // Login successful, navigate to pfrontend/src/services/auth.service.tsrofile
+      router.push(`/account/profile/${loginResult.data}`)
+    } else if (loginResult.error) {
+      // Handle error
+      const { error } = loginResult
+      errorMessage.value = error.message
+
+      // Set field-specific errors if available
+      if (error.field) {
+        if (error.field === 'email') {
+          v$.email.$errors = [{ $message: error.message }]
+        } else if (error.field === 'password') {
+          v$.password.$errors = [{ $message: error.message }]
         }
       }
-    } else if (error instanceof Error) {
-      errorMessageText = error.message
+
+      await Swal.fire({
+        title: 'Login Failed',
+        text: error.message,
+        icon: 'error',
+        confirmButtonColor: '#219dff'
+      })
     }
-    
-    errorMessage.value = errorMessageText
-    
+  } catch (error) {
+    console.error('Login error:', error)
+    errorMessage.value = 'An unexpected error occurred during login'
     await Swal.fire({
-      title: 'Login Failed',
-      text: errorMessageText,
+      title: 'Login Error',
+      text: 'An unexpected error occurred. Please try again.',
       icon: 'error',
       confirmButtonColor: '#219dff'
     })
