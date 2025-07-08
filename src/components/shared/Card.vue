@@ -37,19 +37,65 @@ import type { Band } from '@/types'
 import { cutString } from '@/helpers'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-import { useBandsStore } from '@/stores/bandsStore'
 import LinkBtn from '@/components/shared/LinkBtn.vue'
+import * as Effect from 'effect/Effect'
+import Swal from '@/utils/swal'
+import { BandService, runBandEffect } from '@/services/effect/band.service'
 
 const userStore = useUserStore()
-const bandsStore = useBandsStore()
 const route = useRoute()
 
 defineProps<{
   band: Band
 }>()
 
-const deleteBand = (_id: string, title: string) => {
-  bandsStore.deleteBand(_id, title)
+const deleteBand = async (_id: string, title: string) => {
+  const result = await Swal.fire({
+    title: 'Are you sure you want to delete the band "' + title + '"',
+    text: "You won't be able to revert this!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, please!',
+    confirmButtonColor: '#29fd53',
+    cancelButtonColor: 'red'
+  })
+  
+  if (result.isConfirmed) {
+    try {
+      // Create the delete effect
+      const deleteEffect = Effect.gen(function* () {
+        const bandService = yield* BandService
+        yield* bandService.deleteBand(_id)
+      })
+      
+      // Execute the effect with proper error handling
+      const deleteResult = await runBandEffect(deleteEffect)
+      
+      if (deleteResult.success) {
+        await Swal.fire({
+          title: 'Deleted!',
+          text: 'This band has been deleted.',
+          icon: 'success',
+          confirmButtonColor: '#219dff'
+        })
+      } else if (deleteResult.error) {
+        await Swal.fire({
+          title: 'Error',
+          text: deleteResult.error.message || 'Failed to delete the band',
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
+      }
+    } catch (error) {
+      console.error('Delete band error:', error)
+      await Swal.fire({
+        title: 'Error',
+        text: 'An unexpected error occurred while deleting the band',
+        icon: 'error',
+        confirmButtonColor: '#219dff'
+      })
+    }
+  }
 }
 </script>
 

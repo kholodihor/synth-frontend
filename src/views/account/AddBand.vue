@@ -45,7 +45,7 @@ import { ref, reactive } from 'vue'
 import Swal from '@/utils/swal'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { useBandsStore } from '@/stores/bandsStore'
+
 import { useUserStore } from '@/stores/userStore'
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
@@ -54,8 +54,9 @@ import TextArea from '@/components/shared/TextArea.vue'
 import SubmitBtn from '@/components/shared/SubmitBtn.vue'
 import CroppedImage from '@/components/shared/CroppedImage.vue'
 import FileUpload from '@/components/shared/FileUpload.vue'
+import * as Effect from 'effect/Effect'
+import { BandService, runBandEffect } from '@/services/effect/band.service'
 
-const bandsStore = useBandsStore()
 const userStore = useUserStore()
 const router = useRouter()
 
@@ -140,33 +141,50 @@ const addBand = async () => {
 
     const result = await v$.value.$validate()
     if (result) {
-      try {
-        await axios.post('/api/bands', {
+      // Create the add band effect
+      const addBandEffect = Effect.gen(function* () {
+        const bandService = yield* BandService
+        
+        // Add the band
+        const bandData = {
           title: form.title,
           location: form.location,
           description: form.description,
           image: form.image
-        })
-
-        await bandsStore.fetchBandsByUserId()
-
-        Swal.fire({
+        }
+        
+        yield* bandService.addBand(bandData)
+        
+        // Fetch updated bands list
+        yield* bandService.fetchBandsByUserId()
+        
+        return userStore._id
+      })
+      
+      // Execute the effect with proper error handling
+      const addBandResult = await runBandEffect(addBandEffect)
+      
+      if (addBandResult.success) {
+        await Swal.fire({
           icon: 'success',
           title: 'Success!',
           text: 'Band added successfully!'
         })
-
+        
         router.push('/account/profile/' + userStore._id)
-      } catch (error) {
-        console.error('Error adding band:', error)
-        Swal.fire({
+      } else if (addBandResult.error) {
+        // Handle error
+        const { error } = addBandResult
+        
+        await Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: 'Failed to add the band. Please try again.'
+          text: error.message || 'Failed to add the band',
+          confirmButtonColor: '#219dff'
         })
       }
     } else {
-      Swal.fire({
+      await Swal.fire({
         icon: 'warning',
         title: 'Something went wrong!',
         text: 'You dont fill all fields that are required or inputs are invalid',
@@ -175,7 +193,7 @@ const addBand = async () => {
     }
   } catch (error) {
     console.error('Unexpected error:', error)
-    Swal.fire({
+    await Swal.fire({
       icon: 'error',
       title: 'Error',
       text: 'An unexpected error occurred. Please try again.'
