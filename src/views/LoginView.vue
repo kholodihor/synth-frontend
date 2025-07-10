@@ -10,12 +10,11 @@
       inputType="password"
       placeholder="Your Password"
       v-model:input="form.password"
-      :show-toggle="true"
     />
     <span v-for="error in v$.password.$errors" :key="error.uid" class="error">{{
       error.$message
     }}</span>
-    <span v-if="errorMessage" class="error">{{ errorMessage }}</span>
+    <span v-if="errorMessage" class="error">{{ handleErrors(errorMessage) }}</span>
     <button @click="login" class="form-button">{{ isProcessing ? 'processing' : 'login' }}</button>
     <RouterLink to="/register"
       >Do not have an account? <span class="register-link">Register!</span></RouterLink
@@ -25,15 +24,18 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
-import { useVuelidate } from '@vuelidate/core'
-import { required, email, minLength } from '@vuelidate/validators'
-import * as Effect from 'effect/Effect'
 import axios from 'axios'
 import Swal from '@/utils/swal'
-import TextInput from '@/components/shared/TextInput.vue'
+import { useRouter, RouterLink } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-import { AuthService, runAuthEffect } from '@/services/effect/auth.service'
+import { useProfileStore } from '@/stores/profileStore'
+import { useSongStore } from '@/stores/songStore'
+import { useVideoStore } from '@/stores/videoStore'
+import { useBandsStore } from '@/stores/bandsStore'
+import { useVuelidate } from '@vuelidate/core'
+import { handleErrors } from '@/utils/handleErrors'
+import { required, email, minLength } from '@vuelidate/validators'
+import TextInput from '@/components/shared/TextInput.vue'
 
 const form = reactive({
   email: '',
@@ -45,7 +47,10 @@ const isProcessing = ref(false)
 
 const router = useRouter()
 const userStore = useUserStore()
-// Other stores are now used within the auth service
+const profileStore = useProfileStore()
+const songStore = useSongStore()
+const videoStore = useVideoStore()
+const bandsStore = useBandsStore()
 
 const rules = {
   email: { required, email },
@@ -55,80 +60,37 @@ const rules = {
 const v$ = useVuelidate(rules, form)
 
 const login = async () => {
-  errorMessage.value = ''
   const result = await v$.value.$validate()
-
-  if (!result) {
-    errorMessage.value = 'Please fill in all required fields correctly.'
-    return
-  }
-
-  isProcessing.value = true
-
-  try {
-    // Run the login effect
-    const loginEffect = Effect.gen(function* () {
-      const authService = yield* AuthService
-      const { token, userId, user } = yield* authService.login(form.email, form.password)
-
-      // Set the authorization header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-
-      // Set user details in the store with required fields
-      userStore.setUserDetails({
-        data: {
-          token,
-          _id: userId,
-          username: user?.username || '',
-          email: form.email,
-          image: ''
-        }
+  if (result) {
+    try {
+      isProcessing.value = true
+      const res = await axios.post('api/user/login', {
+        email: form.email,
+        password: form.password
       })
-
-      // Fetch additional user data
-      yield* authService.fetchUserData()
-
-      return userId
-    })
-
-    // Execute the effect with proper error handling
-    const loginResult = await runAuthEffect(loginEffect)
-
-    if (loginResult.success) {
-      // Login successful, navigate to pfrontend/src/services/auth.service.tsrofile
-      router.push(`/account/profile/${loginResult.data}`)
-    } else if (loginResult.error) {
-      // Handle error
-      const { error } = loginResult
-      errorMessage.value = error.message
-
-      // Set field-specific errors if available
-      if (error.field) {
-        if (error.field === 'email') {
-          v$.email.$errors = [{ $message: error.message }]
-        } else if (error.field === 'password') {
-          v$.password.$errors = [{ $message: error.message }]
-        }
+      axios.defaults.headers.common['Authorization'] = 'Bearer ' + res.data.token
+      userStore.setUserDetails(res)
+      await profileStore.fetchProfileById()
+      await songStore.fetchSongsByUserId()
+      await bandsStore.fetchBandsByUserId()
+      await videoStore.fetchVideosByUserId()
+      isProcessing.value = false
+      router.push('/account/profile/' + userStore._id)
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.log('Error message:', error.message)
+        errorMessage.value = error.message
+      } else {
+        console.error('An error occurred:', error)
       }
-
-      await Swal.fire({
-        title: 'Login Failed',
-        text: error.message,
-        icon: 'error',
-        confirmButtonColor: '#219dff'
-      })
     }
-  } catch (error) {
-    console.error('Login error:', error)
-    errorMessage.value = 'An unexpected error occurred during login'
-    await Swal.fire({
-      title: 'Login Error',
-      text: 'An unexpected error occurred. Please try again.',
-      icon: 'error',
+  } else {
+    Swal.fire({
+      title: 'Something went wrong!',
+      text: 'You dont fill all fields that are required or inputs are invalid',
+      icon: 'warning',
       confirmButtonColor: '#219dff'
     })
-  } finally {
-    isProcessing.value = false
   }
 }
 </script>

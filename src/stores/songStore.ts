@@ -2,7 +2,6 @@ import axios from "axios";
 import { defineStore } from "pinia";
 import type { Song } from "@/types";
 import Swal from '@/utils/swal'
-import { useUserStore } from './userStore';
 
 type Songs = {
   songs: Song[];
@@ -15,17 +14,7 @@ export const useSongStore = defineStore("song", {
 
   actions: {
     async fetchSongsByUserId() {
-      // Get the current user's ID from the user store
-      const userStore = useUserStore();
-      const userId = userStore._id;
-      
-      if (!userId) {
-        console.error('User ID not available');
-        return;
-      }
-      
-      // Use the correct API endpoint format: /:id/songs
-      const res = await axios.get(`/api/${userId}/songs`);
+      const res = await axios.get("/api/user/songs");
       if (res.data) {
         this.$state.songs = res.data;
       }

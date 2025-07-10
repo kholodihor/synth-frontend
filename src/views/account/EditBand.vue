@@ -28,6 +28,7 @@ import axios from 'axios'
 import { ref, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
+import { useBandsStore } from '@/stores/bandsStore'
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 import TextInput from '@/components/shared/TextInput.vue';
@@ -35,11 +36,10 @@ import TextArea from '@/components/shared/TextArea.vue';
 import SubmitBtn from '@/components/shared/SubmitBtn.vue'
 import CroppedImage from '@/components/shared/CroppedImage.vue'
 import DefaultAvatar from '/DefaultUserAvatar.png'
-import * as Effect from 'effect/Effect'
-import { BandService, runBandEffect } from '@/services/effect/band.service'
 
 const route = useRoute()
 const router = useRouter()
+const bandsStore = useBandsStore()
 const userStore = useUserStore()
 
 const form = reactive({
@@ -98,38 +98,17 @@ const getUploadedImage = async () => {
 
 const getBandById = async () => {
   try {
-    // Create the get band effect
-    const getBandEffect = Effect.gen(function* () {
-      const bandService = yield* BandService
-      return yield* bandService.getBandById(route.params.id as string)
-    })
-    
-    // Execute the effect with proper error handling
-    const getBandResult = await runBandEffect(getBandEffect)
-    
-    if (getBandResult.success && getBandResult.data) {
-      const band = getBandResult.data
-      form.title = band.title
-      form.location = band.location
-      form.image = band.image
-      form.description = band.description
-    } else if (getBandResult.error) {
-      console.error('Error fetching band:', getBandResult.error.message)
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Failed to load band details',
-        confirmButtonColor: '#219dff'
-      })
-    }
+    const res = await axios.get<Band>('api/bands/' + route.params.id)
+    form.title = res.data.title
+    form.location = res.data.location
+    form.image = res.data.image
+    form.description = res.data.description
   } catch (error) {
-    console.error('Unexpected error:', error)
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'An unexpected error occurred while loading band details',
-      confirmButtonColor: '#219dff'
-    })
+    if (axios.isAxiosError(error)) {
+      console.log('Error message:', error.message);
+    } else {
+      console.error('An error occurred:', error);
+    }
   }
 }
 
@@ -138,78 +117,55 @@ const updateBand = async () => {
     await getUploadedImage()
   }
   if (!form.image) {
-    await Swal.fire({
-      title: 'No image found!',
-      text: 'Please choose an image of your choice and complete all other inputs',
-      icon: 'warning',
-      confirmButtonColor: '#219dff'
-    })
+    Swal.fire(
+      'No image found!',
+      'Please choose an image of your choice and complete all other inputs',
+      'warning'
+    )
     return null
   }
-  
   const result = await v$.value.$validate();
   if (result) {
+    const formData = new FormData();
+    formData.append('title', form.title)
+    formData.append('location', form.location)
+    formData.append('description', form.description)
+    if (form.image) {
+      formData.append('image', form.image)
+    }
     try {
-      const bandData = {
-        title: form.title,
-        location: form.location,
-        description: form.description,
-        image: form.image
-      }
-      
-      // Create the update band effect
-      const updateBandEffect = Effect.gen(function* () {
-        const bandService = yield* BandService
-        
-        // Update the band
-        yield* bandService.updateBand(route.params.id as string, bandData)
-        
-        // Fetch updated bands list
-        yield* bandService.fetchBandsByUserId()
-        
-        return userStore._id
+      await axios.patch<Band>('api/bands/' + route.params.id, formData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
-      
-      // Execute the effect with proper error handling
-      const updateBandResult = await runBandEffect(updateBandEffect)
-      
-      if (updateBandResult.success) {
-        await Swal.fire({
+      Swal.fire(
+        {
           title: 'Band is updated!',
           text: 'You edited a band called "' + form.title + '"',
           icon: 'success',
-          background: 'rgba(0,0,0,0.5)',
-          confirmButtonColor: '#219dff'
-        })
-        
-        router.push('/account/profile/' + userStore._id)
-      } else if (updateBandResult.error) {
-        // Handle error
-        const { error } = updateBandResult
-        
-        await Swal.fire({
-          title: 'Update Failed',
-          text: error.message || 'Failed to update the band',
-          icon: 'error',
-          confirmButtonColor: '#219dff'
-        })
-      }
+          background: "rgba(0,0,0,0.5)",
+          confirmButtonColor: "#219dff",
+        }
+      )
+      await bandsStore.fetchBandsByUserId()
+      router.push('/account/profile/' + userStore._id)
     } catch (error) {
-      console.error('Unexpected error:', error)
-      await Swal.fire({
-        title: 'Error',
-        text: 'An unexpected error occurred while updating the band',
-        icon: 'error',
-        confirmButtonColor: '#219dff'
-      })
+      if (axios.isAxiosError(error)) {
+        console.log('Error message:', error.message);
+      } else {
+        console.error('An error occurred:', error);
+      }
     }
   } else {
-    await Swal.fire({
-      title: 'Something went wrong!',
-      text: 'You dont fill all fields that are required or inputs are invalid',
-      icon: 'warning',
-      confirmButtonColor: '#219dff'
-    })
+    Swal.fire(
+      {
+        title: 'Something went wrong!',
+        text: 'You dont fill all fields that are required or inputs are invalid',
+        icon: 'warning',
+        confirmButtonColor: "#219dff",
+      }
+    )
   }
 }
 </script>

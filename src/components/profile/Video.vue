@@ -7,12 +7,7 @@
           <i class="fas fa-plus"></i>
           Add Video
         </LinkBtn>
-        <LinkBtn
-          text="Delete Video"
-          url="/account/delete-video"
-          :danger="true"
-          v-if="videos.length"
-        >
+        <LinkBtn text="Delete Video" url="/account/delete-video" :danger="true" v-if="videos.length">
           <i class="fas fa-trash"></i>
           Delete Video
         </LinkBtn>
@@ -22,11 +17,14 @@
     <div class="videos-grid">
       <div v-if="videos.length" class="video-items">
         <div v-for="video in videos" :key="video._id" class="video-item">
+          <div class="video-header">
+            <h4>{{ video.title }}</h4>
+          </div>
           <div class="video-frame">
-            <iframe
-              :src="replaceUrl(video.url)"
-              width="100%"
-              height="100%"
+            <iframe 
+              :src="replaceUrl(video.url)" 
+              width="100%" 
+              height="100%" 
               frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen

@@ -132,11 +132,6 @@ const shuffle = ref(false)
 const isLoading = ref(true)
 const songDurations = ref<number[]>([])
 
-// Reset play state when component mounts to ensure consistency
-onMounted(() => {
-  isPlaying.value = false
-})
-
 // Computed
 const currentSong = computed(() => props.songs[currentIndex.value])
 const progress = computed(() => (currentTime.value / duration.value) * 100 || 0)
@@ -145,7 +140,6 @@ const progress = computed(() => (currentTime.value / duration.value) * 100 || 0)
 const initializeAudio = () => {
   audio.value = new Audio()
   audio.value.volume = volume.value
-  audio.value.autoplay = false // Explicitly disable autoplay
 
   audio.value.addEventListener('timeupdate', updateProgress)
   audio.value.addEventListener('ended', handleSongEnd)
@@ -164,26 +158,15 @@ const initializeAudio = () => {
   isLoading.value = false
 }
 
-const togglePlay = async () => {
+const togglePlay = () => {
   if (!audio.value) return
 
-  try {
-    if (isPlaying.value) {
-      await audio.value.pause()
-      isPlaying.value = false
-    } else {
-      // If we don't have a source yet, load the first song
-      if (!audio.value.src && props.songs.length > 0) {
-        await playSong(0, true)
-      } else {
-        await audio.value.play()
-        isPlaying.value = true
-      }
-    }
-  } catch (error) {
-    console.error('Error toggling play state:', error)
-    isPlaying.value = false
+  if (isPlaying.value) {
+    audio.value.pause()
+  } else {
+    audio.value.play()
   }
+  isPlaying.value = !isPlaying.value
 }
 
 const updateProgress = () => {
@@ -230,24 +213,35 @@ const toggleMute = () => {
   isMuted.value = !isMuted.value
 }
 
-const playSong = (index: number, shouldPlay = false) => {
-  if (index < 0 || index >= props.songs.length) return
+const loadSong = (index: number) => {
+  if (!audio.value || index < 0 || index >= props.songs.length) return
 
+  isLoading.value = true
   currentIndex.value = index
-  if (!audio.value) return
-
   audio.value.src = props.songs[index].song
-  audio.value.load()
   
-  if (shouldPlay) {
-    audio.value.play().catch(error => {
-      console.error('Error playing song:', error)
-      isPlaying.value = false
-    })
-  } else {
+  // Update duration once metadata is loaded
+  audio.value.addEventListener('loadedmetadata', () => {
+    duration.value = audio.value?.duration || 0
+    isLoading.value = false
+  }, { once: true })
+}
+
+const playSong = async (index: number) => {
+  if (!audio.value || index < 0 || index >= props.songs.length) return
+
+  try {
+    isLoading.value = true
+    currentIndex.value = index
+    audio.value.src = props.songs[index].song
+    await audio.value.play()
+    isPlaying.value = true
+  } catch (error) {
+    console.error('Error playing song:', error)
     isPlaying.value = false
+  } finally {
+    isLoading.value = false
   }
-  isLoading.value = false
 }
 
 const nextTrack = () => {
@@ -288,11 +282,8 @@ const toggleShuffle = () => {
 // Lifecycle
 onMounted(() => {
   initializeAudio()
-  // Don't autoplay on mount
   if (props.songs.length > 0) {
-    // Initialize with first song but don't autoplay
-    playSong(0, false)
-    playSong(0)
+    loadSong(0)
   }
 })
 
@@ -308,9 +299,8 @@ onUnmounted(() => {
 watch(
   () => props.songs,
   (newSongs) => {
-    if (newSongs.length > 0) {
-      // Only update the current song but don't auto-play
-      playSong(0, false)
+    if (newSongs.length > 0 && !isPlaying.value) {
+      loadSong(0)
     }
   },
   { deep: true }

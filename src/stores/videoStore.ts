@@ -15,13 +15,13 @@ export const useVideoStore = defineStore('video', {
   actions: {
     async fetchVideos() {
       const res = await axios.get('api/video')
-      this.$state.videos = res.data
+      this.$state.videos = res.data.videos
     },
 
     async fetchVideosByUserId() {
       const res = await axios.get('api/user/video')
       if (res.data) {
-        this.$state.videos = res.data
+        this.$state.videos = res.data.videos
       }
     },
 

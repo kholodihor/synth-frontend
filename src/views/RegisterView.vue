@@ -19,7 +19,6 @@
       inputType="password"
       placeholder="Your Password"
       v-model:input="form.password"
-      :show-toggle="true"
     />
     <span v-for="error in v$.password.$errors" :key="error.uid" class="error">{{
       error.$message
@@ -29,7 +28,6 @@
       inputType="password"
       placeholder="Confirm Your Password"
       v-model:input="form.confirmPassword"
-      :show-toggle="true"
     />
     <span v-for="error in v$.confirmPassword.$errors" :key="error.uid" class="error">{{
       error.$message
@@ -46,18 +44,24 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
-import { useVuelidate } from '@vuelidate/core'
-import { required, email, minLength, sameAs } from '@vuelidate/validators'
-import * as Effect from 'effect/Effect'
 import axios from 'axios'
 import Swal from '@/utils/swal'
-import TextInput from '@/components/shared/TextInput.vue'
+import { useRouter, RouterLink } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-import { AuthService, runAuthEffect } from '@/services/effect/auth.service'
+import { useProfileStore } from '@/stores/profileStore'
+import { useSongStore } from '@/stores/songStore'
+import { useVideoStore } from '@/stores/videoStore'
+import { useBandsStore } from '@/stores/bandsStore'
+import { useVuelidate } from '@vuelidate/core'
+import { required, email, minLength, sameAs } from '@vuelidate/validators'
+import TextInput from '@/components/shared/TextInput.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
+const profileStore = useProfileStore()
+const songStore = useSongStore()
+const videoStore = useVideoStore()
+const bandsStore = useBandsStore()
 
 const form = reactive({
   username: '',
@@ -66,129 +70,52 @@ const form = reactive({
   confirmPassword: ''
 })
 
-const errorMessage = ref('')
 const isProcessing = ref(false)
 
-const rules = computed(() => ({
-  username: {
-    required,
-    minLength: minLength(3),
-    maxLength: (value: string) => value.length <= 30 || 'Username cannot exceed 30 characters'
-  },
-  email: {
-    required,
-    email
-  },
-  password: {
-    required,
-    minLength: minLength(6)
-  },
-  confirmPassword: {
-    required,
-    sameAs: sameAs(form.password, 'Passwords do not match')
+const rules = computed(() => {
+  return {
+    username: { required },
+    email: { required, email },
+    password: { required, minLength: minLength(6) },
+    confirmPassword: { required, minLength: minLength(6), sameAs: sameAs(form.password) }
   }
-}))
+})
 
 const v$ = useVuelidate(rules, form)
 
 const register = async () => {
-  errorMessage.value = ''
   const result = await v$.value.$validate()
-
-  if (!result) {
-    errorMessage.value = 'Please fill in all required fields correctly.'
-    return
-  }
-
-  if (form.password !== form.confirmPassword) {
-    errorMessage.value = 'Passwords do not match'
-    return
-  }
-
-  isProcessing.value = true
-
-  try {
-    // Run the registration effect
-    const registerEffect = Effect.gen(function* () {
-      const authService = yield* AuthService
-      const { token, userId, user } = yield* authService.register(
-        form.username,
-        form.email,
-        form.password
-      )
-
-      // Set the authorization header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-
-      // Set user details in the store with required fields
-      userStore.setUserDetails({
-        data: {
-          token,
-          _id: userId,
-          username: user?.username || form.username,
-          email: form.email,
-          image: ''
-        }
+  if (result) {
+    isProcessing.value = true
+    try {
+      const response = await axios.post('/api/user/register', {
+        username: form.username,
+        email: form.email,
+        password: form.password
       })
-
-      // Show success message
-      yield* Effect.promise(() =>
-        Swal.fire({
-          title: 'Registration Successful!',
-          text: 'Your account has been created successfully.',
-          icon: 'success',
-          confirmButtonColor: '#219dff',
-          timer: 2000,
-          timerProgressBar: true
-        })
-      )
-
-      // Fetch additional user data
-      yield* authService.fetchUserData()
-
-      return userId
-    })
-
-    // Execute the effect with proper error handling
-    const registerResult = await runAuthEffect(registerEffect)
-
-    if (registerResult.success) {
-      // Registration successful, navigate to profile
-      router.push(`/account/profile/${registerResult.data}`)
-    } else if (registerResult.error) {
-      // Handle error
-      const { error } = registerResult
-      errorMessage.value = error.message
-
-      // Set field-specific errors if available
-      if (error.field) {
-        if (error.field === 'email') {
-          v$.email.$errors = [{ $message: error.message }]
-        } else if (error.field === 'password') {
-          v$.password.$errors = [{ $message: error.message }]
-        } else if (error.field === 'username') {
-          v$.username.$errors = [{ $message: error.message }]
-        }
+      axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.token
+      console.log('Response:', response.data)
+      userStore.setUserDetails(response)
+      await profileStore.fetchProfileById()
+      await songStore.fetchSongsByUserId()
+      await bandsStore.fetchBandsByUserId()
+      await videoStore.fetchVideosByUserId()
+      isProcessing.value = false
+      router.push('/account/profile/' + userStore._id)
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.log('Error message:', error.message)
+      } else {
+        console.error('An error occurred:', error)
       }
-
-      await Swal.fire({
-        title: 'Registration Failed',
-        text: error.message,
-        icon: 'error',
-        confirmButtonColor: '#219dff'
-      })
     }
-  } catch (error) {
-    console.error('Registration error:', error)
-    errorMessage.value = 'An unexpected error occurred during registration'
-    await Swal.fire({
-      title: 'Registration Error',
-      text: 'An unexpected error occurred. Please try again.',
-      icon: 'error',
+  } else {
+    Swal.fire({
+      title: 'Something went wrong!',
+      text: 'You dont fill all fields that are required or inputs are invalid',
+      icon: 'warning',
       confirmButtonColor: '#219dff'
     })
-  } finally {
-    isProcessing.value = false
   }
 }
 </script>

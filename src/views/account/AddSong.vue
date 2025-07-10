@@ -6,52 +6,42 @@
     <span v-for="error in v$.artist.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
     <TextInput label="Song Title" placeholder="Name a New Song" v-model:input="form.title" inputType="text" />
     <span v-for="error in v$.title.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <FileUpload 
-      id="song-upload"
-      :label="songFile ? songFile.name : 'Upload Song'"
-      accept="audio/*"
-      :error="v$.song.$errors[0]?.$message"
-      @file-selected="handleFileSelected"
-    />
+    <div class="inputbox">
+      <label for="song">
+        {{ songFile ? songFile.name : 'Upload Song' }}
+        <input type="file" hidden id="song" ref="fileInput" @change="handleFileUpload">
+        <span v-for="error in v$.song.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
+      </label>
+    </div>
     <SubmitBtn @click="addSong" :text="processing ? 'loading...' : 'add song'" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
-import Swal from '@/utils/swal';
-import { useRouter } from 'vue-router';
+import Swal from '@/utils/swal'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore';
-import { useSongStore } from '@/stores/songStore';
+import { useSongStore } from '@/stores/songStore'
 import axios from 'axios';
-import { useVuelidate } from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
-import TextInput from '@/components/shared/TextInput.vue';
-import SubmitBtn from '@/components/shared/SubmitBtn.vue';
-import FileUpload from '@/components/shared/FileUpload.vue';
+import { useVuelidate } from '@vuelidate/core'
+import { required } from '@vuelidate/validators'
+import TextInput from '@/components/shared/TextInput.vue'
+import SubmitBtn from '@/components/shared/SubmitBtn.vue'
 
 const userStore = useUserStore()
 const songStore = useSongStore()
 const router = useRouter()
 
-interface SongForm {
-  title: string;
-  artist: string;
-  song: string | File;
-}
-
-const form = reactive<SongForm>({
+const form = reactive({
   title: '',
   artist: '',
   song: ''
 })
 
-interface SongFile extends File {
-  name: string;
-}
-
-const songFile = ref<SongFile | null>(null);
-const processing = ref(false);
+const songFile = ref()
+const fileInput = ref()
+const processing = ref(false)
 
 const rules = {
   title: { required },
@@ -61,90 +51,79 @@ const rules = {
 
 const v$ = useVuelidate(rules, form)
 
-const handleFileSelected = (file: File | null) => {
-  if (file) {
-    songFile.value = file as SongFile;
-    form.song = file;
-  } else {
-    songFile.value = null;
-    form.song = '';
-  }
-};
+const handleFileUpload = () => {
+  songFile.value = fileInput.value.files[0]
 
-const getUploadedSong = async (): Promise<boolean> => {
+}
+
+const getUploadedSong = async () => {
   try {
     if (songFile.value) {
-      const formData = new FormData();
-      formData.append('song', songFile.value);
-      const { data } = await axios.post('/api/uploadsong', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      // Only assign the URL string, not the File object
+      const formData = new FormData()
+      formData.append('song', songFile.value)
+      const { data } = await axios.post('/api/uploadsong', formData,
+        {
+          headers: {
+            "Content-type": "multipart/form-data",
+          },
+        }
+      );
       form.song = data.url;
-      return true;
     }
-    return false;
   } catch (error) {
-    console.error('Upload error:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Upload Failed',
-      text: 'Failed to upload the song. Please try again.',
-    });
-    return false;
-  }
-};
+    if (axios.isAxiosError(error)) {
+      console.log('Error message:', error.message);
+    } else {
+      console.error('An error occurred:', error);
+    }
+  };
+}
 
 const addSong = async () => {
-  processing.value = true;
-  
-  try {
-    const uploadSuccess = await getUploadedSong();
-    if (!uploadSuccess) {
-      processing.value = false;
-      return;
-    }
-
-    const result = await v$.value.$validate();
-    if (result) {
-      await axios.post('api/songs', {
-        title: form.title,
-        artist: form.artist,
-        song: form.song
-      }, {
+  processing.value = true
+  await getUploadedSong();
+  const result = await v$.value.$validate();
+  if (result) {
+    try {
+      const formData = new FormData()
+      formData.append('title', form.title)
+      formData.append('artist', form.artist)
+      formData.append('song', form.song)
+      await axios.post('api/songs', formData, {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      });
-
-      Swal.fire({
-        title: 'Song Added!',
-        text: `You added a song called "${form.title}" by ${form.artist}`,
-        icon: 'success',
-        confirmButtonColor: '#219dff',
-      });
-
-      await songStore.fetchSongsByUserId();
-      router.push('/account/profile/' + userStore._id);
-    } else {
-      Swal.fire({
-        title: 'Validation Error',
-        text: 'Please fill in all required fields correctly.',
-        icon: 'warning',
-        confirmButtonColor: '#219dff',
-      });
+      })
+      Swal.fire(
+        {
+          title: 'Song is added!',
+          text: 'You added a song called "' + form.title + '"'  +  'by' + form.artist,
+          icon: 'success',
+          confirmButtonColor: "#219dff",
+        }
+      )
+      songStore.fetchSongsByUserId()
+      setTimeout(() => {
+        router.push('/account/profile/' + userStore._id)
+      }, 200)
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.log('Error message:', error.message);
+      } else {
+        console.error('An error occurred:', error);
+      }
+    } finally {
+      processing.value = false
     }
-  } catch (error) {
-    console.error('Error adding song:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: 'Failed to add the song. Please try again.',
-    });
-  } finally {
-    processing.value = false;
+  } else {
+    Swal.fire(
+      {
+        title: 'Something went wrong!',
+        text: 'You dont fill all fields that are required or inputs are invalid',
+        icon: 'warning',
+        confirmButtonColor: "#219dff",
+      }
+    )
   }
 }
 </script>
