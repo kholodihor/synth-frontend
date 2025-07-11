@@ -33,6 +33,7 @@
       error.$message
     }}</span>
     <span v-if="form.password !== form.confirmPassword" class="error">Passwords mismatch</span>
+    <!-- Error messages will be shown with SweetAlert -->
     <button @click="register" class="form-button">
       {{ isProcessing ? 'processing' : 'register' }}
     </button>
@@ -55,6 +56,7 @@ import { useBandsStore } from '@/stores/bandsStore'
 import { useVuelidate } from '@vuelidate/core'
 import { required, email, minLength, sameAs } from '@vuelidate/validators'
 import TextInput from '@/components/shared/TextInput.vue'
+import { handleErrors } from '@/utils/handleErrors'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -93,6 +95,19 @@ const register = async () => {
         email: form.email,
         password: form.password
       })
+      
+      // Check if the response has the success flag
+      if (response.data && response.data.success === false) {
+        isProcessing.value = false
+        Swal.fire({
+          title: 'Registration Failed',
+          text: handleErrors(response.data.message || 'Registration failed'),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
+        return
+      }
+      
       axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.token
       console.log('Response:', response.data)
       userStore.setUserDetails(response)
@@ -103,10 +118,31 @@ const register = async () => {
       isProcessing.value = false
       router.push('/account/profile/' + userStore._id)
     } catch (error) {
+      isProcessing.value = false
       if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message)
+        console.log('Error response:', error.response?.data)
+        // Handle the new Effect-based error response format
+        let errorMsg = 'An error occurred'
+        if (error.response?.data) {
+          errorMsg = error.response.data.message || error.message
+        } else {
+          errorMsg = error.message
+        }
+        
+        Swal.fire({
+          title: 'Registration Failed',
+          text: handleErrors(errorMsg),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
       } else {
         console.error('An error occurred:', error)
+        Swal.fire({
+          title: 'Registration Failed',
+          text: 'An unexpected error occurred',
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
       }
     }
   } else {
@@ -125,8 +161,22 @@ const register = async () => {
   @include formButton;
 }
 
-.login-link:hover {
-  color: $blue;
-  text-shadow: 2px 2px 5px $blue, -2px -2px 5px $blue;
+.login-link {
+  color: $purple;
+  cursor: pointer;
+}
+
+.error-container {
+  width: 60%;
+  min-width: 20rem;
+  margin: 0.5rem auto;
+  text-align: center;
+}
+
+.error {
+  color: #ff4d4f;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.5rem;
 }
 </style>

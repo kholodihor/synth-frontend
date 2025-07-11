@@ -7,13 +7,14 @@
     <TextInput label="Country of the Band" inputType="text" placeholder="Band Country" v-model:input="form.location" />
     <span v-for="error in v$.location.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
     <CroppedImage :image="imageFile ? imageFile : ''" />
-    <div class="inputbox">
-      <label for="image">
-        Upload Image
-        <input type="file" hidden id="image" ref="fileInput" @change="handleFile">
-        <span v-for="error in v$.image.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-      </label>
-    </div>
+    <FileUpload 
+      label="Band Image" 
+      placeholder="Click to upload a band image" 
+      id="band-image" 
+      accept="image/*" 
+      @file-selected="handleFile" 
+      :errorMessage="v$.image.$errors.length ? v$.image.$errors[0].$message : ''" 
+    />
     <TextArea label="description" placeholder="Add an information about this band here"
       v-model:description="form.description" />
     <span v-for="error in v$.description.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
@@ -30,10 +31,12 @@ import { useUserStore } from '@/stores/userStore'
 import { useBandsStore } from '@/stores/bandsStore'
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
+import { handleErrors } from '@/utils/handleErrors'
 import TextInput from '@/components/shared/TextInput.vue';
 import TextArea from '@/components/shared/TextArea.vue';
 import SubmitBtn from '@/components/shared/SubmitBtn.vue'
 import CroppedImage from '@/components/shared/CroppedImage.vue'
+import FileUpload from '@/components/shared/FileUpload.vue'
 
 const userStore = useUserStore()
 const bandsStore = useBandsStore()
@@ -47,7 +50,6 @@ const form = reactive({
 })
 
 const imageFile = ref()
-const fileInput = ref()
 const processing = ref(false)
 
 const rules = {
@@ -59,8 +61,8 @@ const rules = {
 
 const v$ = useVuelidate(rules, form)
 
-const handleFile = () => {
-  const file = fileInput.value.files[0]
+const handleFile = (file: File) => {
+  imageFile.value = file
   setFileToBase64(file)
 }
 
@@ -75,16 +77,43 @@ const setFileToBase64 = (file: any) => {
 const getUploadedImage = async () => {
   try {
     if (imageFile.value) {
-      const { data } = await axios.post('/api/uploadbandimage', { image: imageFile.value },
-      );
+      const { data } = await axios.post('/api/uploadbandimage', { image: imageFile.value });
+      
+      // Check if the response has the success flag
+      if (data && data.success === false) {
+        Swal.fire({
+          title: 'Upload Failed',
+          text: handleErrors(data.message || 'Failed to upload band image'),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
+        return null;
+      }
+      
       form.image = data.url;
+      return data.url;
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.log('Error message:', error.message);
+      console.log('Error response:', error.response?.data);
+      
+      Swal.fire({
+        title: 'Upload Failed',
+        text: handleErrors(error.response?.data?.message || error.message),
+        icon: 'error',
+        confirmButtonColor: '#219dff'
+      })
     } else {
       console.error('An error occurred:', error);
+      
+      Swal.fire({
+        title: 'Upload Failed',
+        text: 'An unexpected error occurred while uploading the image',
+        icon: 'error',
+        confirmButtonColor: '#219dff'
+      })
     }
+    return null;
   };
 }
 
@@ -101,24 +130,52 @@ const addBand = async () => {
       data.append('image', form.image)
     }
     try {
-      await axios.post('api/bands/', data, {
+      const response = await axios.post('api/bands/', data, {
         headers: {
           "Content-Type": "application/json",
         },
       })
-      Swal.fire(
-        {
-          title: 'Band is added!',
-          text: 'The band you added is called "' + form.title + '"',
-          icon: 'success',
-          confirmButtonColor: "#219dff",
-        }
-      )
+      
+      // Check if the response has the success flag
+      if (response.data && response.data.success === false) {
+        Swal.fire({
+          title: 'Failed to Add Band',
+          text: handleErrors(response.data.message || 'Failed to add band'),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
+        return;
+      }
+      
+      Swal.fire({
+        title: 'Band is added!',
+        text: 'The band you added is called "' + form.title + '"',
+        icon: 'success',
+        confirmButtonColor: '#219dff',
+      })
       await bandsStore.fetchBandsByUserId()
       router.push('/account/profile/' + userStore._id)
 
     } catch (error) {
-      console.log(error)
+      if (axios.isAxiosError(error)) {
+        console.log('Error response:', error.response?.data);
+        
+        Swal.fire({
+          title: 'Failed to Add Band',
+          text: handleErrors(error.response?.data?.message || error.message),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
+      } else {
+        console.error('An error occurred:', error);
+        
+        Swal.fire({
+          title: 'Failed to Add Band',
+          text: 'An unexpected error occurred',
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
+      }
     } finally {
       processing.value = false
     }

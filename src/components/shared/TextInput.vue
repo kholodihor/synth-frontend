@@ -1,18 +1,30 @@
 <template>
   <div class="input__wrapper">
     <label for="textInput" class="label">{{ label }}</label>
-    <input
-      :type="inputType"
-      :placeholder="placeholder"
-      class="text__input"
-      :id="label"
-      v-model="computedInput"
-    />
+    <div class="input-container">
+      <input
+        :type="showPassword ? 'text' : inputType"
+        :placeholder="placeholder"
+        class="text__input"
+        :id="label"
+        v-model="computedInput"
+      />
+      <button
+        v-if="inputType === 'password'"
+        type="button"
+        class="toggle-password"
+        @click="togglePasswordVisibility"
+        :aria-label="showPassword ? 'Hide password' : 'Show password'"
+      >
+        <span v-if="showPassword">🙈</span>
+        <span v-else>👁️</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { toRefs, computed } from 'vue'
+import { toRefs, computed, ref } from 'vue'
 
 const emit = defineEmits(['update:input'])
 
@@ -24,6 +36,14 @@ const props = defineProps({
 })
 
 const { label, input, inputType, placeholder } = toRefs(props)
+
+// Password visibility state
+const showPassword = ref(false)
+
+// Toggle password visibility
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value
+}
 
 const computedInput = computed({
   get: () => input?.value,
@@ -42,10 +62,43 @@ const computedInput = computed({
   flex-direction: column;
   margin-bottom: 0.5rem;
 
-  .text__input {
+  .input-container {
     width: 90%;
-    padding: 0.5rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .text__input {
+    width: 100%;
+    padding: 0.8rem;
     border-radius: 0.5rem;
+    background: #232323;
+    color: white;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    height: 100%;
+
+    &:hover {
+      color: white;
+    }
+
+    &:focus {
+      outline: none;
+    }
   }
 
   .label {

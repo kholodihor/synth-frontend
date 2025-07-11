@@ -18,6 +18,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore';
 import { useVuelidate } from '@vuelidate/core'
 import { required, url } from '@vuelidate/validators'
+import { handleErrors } from '@/utils/handleErrors'
 import TextInput from '@/components/shared/TextInput.vue'
 import SubmitBtn from '@/components/shared/SubmitBtn.vue'
 import Swal from '@/utils/swal'
@@ -47,25 +48,49 @@ const addYoutubeVideoLink = async () => {
       const formData = new FormData()
       formData.append('title', form.title)
       formData.append('url', form.videoUrl)
-      await axios.post('api/video', formData, {
+      const response = await axios.post('api/video', formData, {
         headers: {
           "Content-Type": "application/json",
         },
       })
-      Swal.fire(
-        {
-          title: 'New video added!',
-          text: 'You added a video "' + form.title + '"',
-          icon: 'success',
-          confirmButtonColor: "#219dff",
-        }
-      )
+      
+      // Check if the response has the success flag
+      if (response.data && response.data.success === false) {
+        Swal.fire({
+          title: 'Failed to Add Video',
+          text: handleErrors(response.data.message || 'Failed to add video'),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
+        return;
+      }
+      
+      Swal.fire({
+        title: 'New video added!',
+        text: 'You added a video "' + form.title + '"',
+        icon: 'success',
+        confirmButtonColor: '#219dff',
+      })
       router.push('/account/profile/' + userStore._id)
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message);
+        console.log('Error response:', error.response?.data);
+        
+        Swal.fire({
+          title: 'Failed to Add Video',
+          text: handleErrors(error.response?.data?.message || error.message),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
       } else {
         console.error('An error occurred:', error);
+        
+        Swal.fire({
+          title: 'Failed to Add Video',
+          text: 'An unexpected error occurred',
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
       }
     } finally{
       processing.value = false

@@ -2,6 +2,7 @@ import axios from 'axios'
 import { defineStore } from 'pinia'
 import type { Video } from '@/types'
 import Swal from '@/utils/swal'
+import { handleErrors } from '@/utils/handleErrors'
 
 type Videos = {
   videos: Video[]
@@ -37,8 +38,20 @@ export const useVideoStore = defineStore('video', {
       }).then(async (result: { isConfirmed: boolean }) => {
         if (result.isConfirmed) {
           try {
-            await axios.delete('api/video/' + video._id)
-            this.fetchVideosByUserId()
+            const response = await axios.delete('api/video/' + video._id)
+            
+            // Check if the response has the success flag
+            if (response.data && response.data.success === false) {
+              Swal.fire({
+                title: 'Delete Failed',
+                text: handleErrors(response.data.message || 'Failed to delete video'),
+                icon: 'error',
+                confirmButtonColor: '#219dff'
+              })
+              return;
+            }
+            
+            await this.fetchVideosByUserId()
             Swal.fire({
               title: 'Deleted!',
               text: 'Your video has been deleted.',
@@ -47,9 +60,23 @@ export const useVideoStore = defineStore('video', {
             })
           } catch (error) {
             if (axios.isAxiosError(error)) {
-              console.log('Error message:', error.message)
+              console.log('Error response:', error.response?.data);
+              
+              Swal.fire({
+                title: 'Delete Failed',
+                text: handleErrors(error.response?.data?.message || error.message),
+                icon: 'error',
+                confirmButtonColor: '#219dff'
+              })
             } else {
-              console.error('An error occurred:', error)
+              console.error('An error occurred:', error);
+              
+              Swal.fire({
+                title: 'Delete Failed',
+                text: 'An unexpected error occurred while deleting the video',
+                icon: 'error',
+                confirmButtonColor: '#219dff'
+              })
             }
           }
         }

@@ -2,6 +2,7 @@ import axios from "axios";
 import { defineStore } from "pinia";
 import type { Song } from "@/types";
 import Swal from '@/utils/swal'
+import { handleErrors } from '@/utils/handleErrors'
 
 type Songs = {
   songs: Song[];
@@ -32,18 +33,45 @@ export const useSongStore = defineStore("song", {
       }).then(async (result: { isConfirmed: boolean; }) => {
         if (result.isConfirmed) {
           try {
-            await axios.delete('api/songs/' + song._id)
-            this.fetchSongsByUserId()
-            Swal.fire(
-              'Deleted!',
-              'Your file has been deleted.',
-              'success'
-            )
+            const response = await axios.delete('api/songs/' + song._id)
+            
+            // Check if the response has the success flag
+            if (response.data && response.data.success === false) {
+              Swal.fire({
+                title: 'Delete Failed',
+                text: handleErrors(response.data.message || 'Failed to delete song'),
+                icon: 'error',
+                confirmButtonColor: '#219dff'
+              })
+              return;
+            }
+            
+            await this.fetchSongsByUserId()
+            Swal.fire({
+              title: 'Deleted!',
+              text: 'Your song has been deleted.',
+              icon: 'success',
+              confirmButtonColor: '#219dff'
+            })
           } catch (error) {
             if (axios.isAxiosError(error)) {
-              console.log('Error message:', error.message);
+              console.log('Error response:', error.response?.data);
+              
+              Swal.fire({
+                title: 'Delete Failed',
+                text: handleErrors(error.response?.data?.message || error.message),
+                icon: 'error',
+                confirmButtonColor: '#219dff'
+              })
             } else {
               console.error('An error occurred:', error);
+              
+              Swal.fire({
+                title: 'Delete Failed',
+                text: 'An unexpected error occurred while deleting the song',
+                icon: 'error',
+                confirmButtonColor: '#219dff'
+              })
             }
           }
         }

@@ -6,13 +6,14 @@
     <span v-for="error in v$.artist.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
     <TextInput label="Song Title" placeholder="Name a New Song" v-model:input="form.title" inputType="text" />
     <span v-for="error in v$.title.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <div class="inputbox">
-      <label for="song">
-        {{ songFile ? songFile.name : 'Upload Song' }}
-        <input type="file" hidden id="song" ref="fileInput" @change="handleFileUpload">
-        <span v-for="error in v$.song.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-      </label>
-    </div>
+    <FileUpload 
+      label="Song File" 
+      placeholder="Click to upload a song file" 
+      id="song-file" 
+      accept="audio/*" 
+      @file-selected="handleFileUpload" 
+      :errorMessage="v$.song.$errors.length ? v$.song.$errors[0].$message : ''" 
+    />
     <SubmitBtn @click="addSong" :text="processing ? 'loading...' : 'add song'" />
   </div>
 </template>
@@ -26,8 +27,10 @@ import { useSongStore } from '@/stores/songStore'
 import axios from 'axios';
 import { useVuelidate } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
+import { handleErrors } from '@/utils/handleErrors'
 import TextInput from '@/components/shared/TextInput.vue'
 import SubmitBtn from '@/components/shared/SubmitBtn.vue'
+import FileUpload from '@/components/shared/FileUpload.vue'
 
 const userStore = useUserStore()
 const songStore = useSongStore()
@@ -40,7 +43,6 @@ const form = reactive({
 })
 
 const songFile = ref()
-const fileInput = ref()
 const processing = ref(false)
 
 const rules = {
@@ -51,9 +53,8 @@ const rules = {
 
 const v$ = useVuelidate(rules, form)
 
-const handleFileUpload = () => {
-  songFile.value = fileInput.value.files[0]
-
+const handleFileUpload = (file: File) => {
+  songFile.value = file
 }
 
 const getUploadedSong = async () => {
@@ -68,14 +69,42 @@ const getUploadedSong = async () => {
           },
         }
       );
+      
+      // Check if the response has the success flag
+      if (data && data.success === false) {
+        Swal.fire({
+          title: 'Upload Failed',
+          text: handleErrors(data.message || 'Failed to upload song file'),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
+        return null;
+      }
+      
       form.song = data.url;
+      return data.url;
     }
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      console.log('Error message:', error.message);
+      console.log('Error response:', error.response?.data);
+      
+      Swal.fire({
+        title: 'Upload Failed',
+        text: handleErrors(error.response?.data?.message || error.message),
+        icon: 'error',
+        confirmButtonColor: '#219dff'
+      })
     } else {
       console.error('An error occurred:', error);
+      
+      Swal.fire({
+        title: 'Upload Failed',
+        text: 'An unexpected error occurred while uploading the song',
+        icon: 'error',
+        confirmButtonColor: '#219dff'
+      })
     }
+    return null;
   };
 }
 
@@ -89,28 +118,53 @@ const addSong = async () => {
       formData.append('title', form.title)
       formData.append('artist', form.artist)
       formData.append('song', form.song)
-      await axios.post('api/songs', formData, {
+      const response = await axios.post('api/songs', formData, {
         headers: {
           "Content-Type": "application/json",
         },
       })
-      Swal.fire(
-        {
-          title: 'Song is added!',
-          text: 'You added a song called "' + form.title + '"'  +  'by' + form.artist,
-          icon: 'success',
-          confirmButtonColor: "#219dff",
-        }
-      )
+      
+      // Check if the response has the success flag
+      if (response.data && response.data.success === false) {
+        Swal.fire({
+          title: 'Failed to Add Song',
+          text: handleErrors(response.data.message || 'Failed to add song'),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
+        processing.value = false
+        return;
+      }
+      
+      Swal.fire({
+        title: 'Song is added!',
+        text: 'You added a song called "' + form.title + '" by ' + form.artist,
+        icon: 'success',
+        confirmButtonColor: '#219dff',
+      })
       songStore.fetchSongsByUserId()
       setTimeout(() => {
         router.push('/account/profile/' + userStore._id)
       }, 200)
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.log('Error message:', error.message);
+        console.log('Error response:', error.response?.data);
+        
+        Swal.fire({
+          title: 'Failed to Add Song',
+          text: handleErrors(error.response?.data?.message || error.message),
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
       } else {
         console.error('An error occurred:', error);
+        
+        Swal.fire({
+          title: 'Failed to Add Song',
+          text: 'An unexpected error occurred',
+          icon: 'error',
+          confirmButtonColor: '#219dff'
+        })
       }
     } finally {
       processing.value = false
