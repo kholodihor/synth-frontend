@@ -1,7 +1,7 @@
 <template>
   <div class="songs-section">
     <div class="section-header">
-      <h1>My Songs</h1>
+      <h2>My Songs</h2>
       <div class="buttons-wrapper" v-if="userStore._id == route.params.id">
         <LinkBtn text="Add Song" url="/account/add-song">
           <i class="fas fa-plus"></i>
@@ -68,10 +68,10 @@ defineProps<{
     text-align: center;
   }
 
-  h1 {
+  h2 {
     font-size: 2.5rem;
     color: $white;
-    text-shadow: 0 0 10px rgba($blue, 0.5);
+    text-shadow: $text-shadow-main;
 
     @media (max-width: 768px) {
       font-size: 2rem;
@@ -132,12 +132,7 @@ defineProps<{
 .divider {
   width: 100%;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba($blue, 0.3),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba($blue, 0.3), transparent);
   margin: 1rem 0;
 }
 

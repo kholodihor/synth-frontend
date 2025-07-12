@@ -23,9 +23,13 @@
             <p>{{ band?.user?.username }}</p>
           </div>
         </div>
-        <router-link class="readmore" :to="'/band/' + band._id">Read More...</router-link>
+        <div class="readmore-container">
+          <router-link class="readmore" :to="'/band/' + band._id">⏩ Read More</router-link>
+        </div>
       </div>
-      <router-link v-else class="readmore" :to="'/band/' + band._id">Read More...</router-link>
+      <div v-else class="readmore-container" style="margin-top: 2rem">
+        <router-link class="readmore" :to="'/band/' + band._id">⏩ Read More </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -58,6 +62,7 @@ const deleteBand = (_id: string, title: string) => {
   box-shadow: 0 0 2px $white;
   border-radius: 3px;
   margin: 0 auto;
+  max-height: 35rem;
 
   .image {
     width: 100%;
@@ -93,10 +98,15 @@ const deleteBand = (_id: string, title: string) => {
   .description {
     height: 4rem;
   }
-
+  .readmore-container {
+    margin-left: auto;
+    margin-top: auto;
+    padding-left: 1rem;
+  }
   .readmore {
     color: $lightgray;
-    margin-top: 1rem;
+    text-decoration: none;
+    transition: color 0.3s ease;
 
     &:hover {
       color: $green;

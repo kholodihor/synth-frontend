@@ -1,7 +1,7 @@
 <template>
   <div class="bands-section">
     <div class="section-header">
-      <h1>My Favourite Bands</h1>
+      <h2>My Favourite Bands</h2>
       <div class="buttons-wrapper" v-if="userStore._id == route.params.id">
         <LinkBtn text="Add Band" url="/account/add-band">
           <i class="fas fa-plus"></i>
@@ -57,10 +57,10 @@ defineProps<{
     gap: 1rem;
   }
 
-  h1 {
+  h2 {
     font-size: 2.5rem;
     color: $white;
-    text-shadow: 0 0 10px rgba($blue, 0.5);
+    text-shadow: $text-shadow-main;
 
     @media (max-width: 768px) {
       font-size: 2rem;

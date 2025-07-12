@@ -1,13 +1,18 @@
 <template>
   <div class="video-section">
     <div class="section-header">
-      <h1>My Videos</h1>
+      <h2>My Videos</h2>
       <div class="buttons-wrapper" v-if="userStore._id == route.params.id">
         <LinkBtn text="Add Video" url="/account/add-video">
           <i class="fas fa-plus"></i>
           Add Video
         </LinkBtn>
-        <LinkBtn text="Delete Video" url="/account/delete-video" :danger="true" v-if="videos.length">
+        <LinkBtn
+          text="Delete Video"
+          url="/account/delete-video"
+          :danger="true"
+          v-if="videos.length"
+        >
           <i class="fas fa-trash"></i>
           Delete Video
         </LinkBtn>
@@ -17,14 +22,11 @@
     <div class="videos-grid">
       <div v-if="videos.length" class="video-items">
         <div v-for="video in videos" :key="video._id" class="video-item">
-          <div class="video-header">
-            <h4>{{ video.title }}</h4>
-          </div>
           <div class="video-frame">
-            <iframe 
-              :src="replaceUrl(video.url)" 
-              width="100%" 
-              height="100%" 
+            <iframe
+              :src="replaceUrl(video.url)"
+              width="100%"
+              height="100%"
               frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
@@ -84,10 +86,10 @@ defineProps<{
     text-align: center;
   }
 
-  h1 {
+  h2 {
     font-size: 2.5rem;
     color: $white;
-    text-shadow: 0 0 10px rgba($blue, 0.5);
+    text-shadow: $text-shadow-main;
 
     @media (max-width: 768px) {
       font-size: 2rem;

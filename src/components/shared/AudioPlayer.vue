@@ -1,6 +1,6 @@
 <template>
   <div class="audio-player">
-    <div ref="playerRef" class="player-container">
+    <div ref="playerRef" class="player-container" :class="{ 'is-playing': isPlaying }">
       <div class="player-header">
         <div class="now-playing">
           <div class="song-info">
@@ -219,12 +219,16 @@ const loadSong = (index: number) => {
   isLoading.value = true
   currentIndex.value = index
   audio.value.src = props.songs[index].song
-  
+
   // Update duration once metadata is loaded
-  audio.value.addEventListener('loadedmetadata', () => {
-    duration.value = audio.value?.duration || 0
-    isLoading.value = false
-  }, { once: true })
+  audio.value.addEventListener(
+    'loadedmetadata',
+    () => {
+      duration.value = audio.value?.duration || 0
+      isLoading.value = false
+    },
+    { once: true }
+  )
 }
 
 const playSong = async (index: number) => {
@@ -314,13 +318,72 @@ watch(
 }
 
 .player-container {
-  background-color: rgba($black, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: clamp(1rem, 3vw, 1.5rem);
+  position: relative;
+  z-index: 0;
   width: min(100%, 800px);
   margin: 0 auto;
-  box-shadow: 0 0 15px rgba($blue, 0.2);
+  padding: clamp(1.2rem, 3.5vw, 1.8rem);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba($black, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid $purple; /* Default blue border */
+  transition: border-color 0.3s ease;
+}
+
+.player-container.is-playing {
+  border-color: transparent; /* Hide border when playing */
+}
+
+.player-container::before {
+  content: '';
+  position: absolute;
+  z-index: -2;
+  left: -50%;
+  top: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba($blue, 0.8) 45deg,
+    rgba($pink, 1) 90deg,
+    rgba($blue, 0.8) 135deg,
+    transparent 180deg,
+    transparent 225deg,
+    rgba($pink, 0.8) 270deg,
+    rgba($blue, 1) 315deg,
+    transparent 360deg
+  );
+  background-size: 100% 100%, 50% 50%;
+  animation: rotateBorder 4s linear infinite;
+  animation-play-state: paused; /* Paused by default */
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.player-container.is-playing::before {
+  animation-play-state: running; /* Running when isPlaying is true */
+  opacity: 0.8;
+}
+
+.player-container::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 1px;
+  top: 1px;
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  background: rgba($black, 0.95);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes rotateBorder {
+  100% {
+    transform: rotate(1turn);
+  }
 }
 
 .player-header {

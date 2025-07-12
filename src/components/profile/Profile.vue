@@ -121,7 +121,7 @@ const bandCount = computed(() => bandsStore.bands.length)
   gap: 3rem;
   padding: 2rem;
   border-radius: 1rem;
-  box-shadow: 0 8px 32px rgba($dark, 0.5);
+  box-shadow: 0 8px 32px rgba($blue, 0.5);
   border: 1px solid rgba($blue, 0.1);
 
   @media (max-width: 768px) {

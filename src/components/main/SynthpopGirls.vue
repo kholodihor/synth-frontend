@@ -16,7 +16,22 @@
         @blur="activeCard = null"
       >
         <div class="card__image">
-          <img :src="girl.image" :alt="girl.name" loading="lazy" />
+          <img 
+            :src="girl.image" 
+            :srcset="`${girl.image} 1x, ${girl.image.replace('.webp', '@2x.webp')} 2x`"
+            :alt="girl.name" 
+            loading="lazy" 
+            width="300"
+            height="400"
+            :style="{ backgroundColor: girl.color }"
+            @load="onImageLoad"
+            @error="onImageError"
+          />
+          <div 
+            class="card__image-placeholder" 
+            :class="{ 'card__image-placeholder--hidden': imageLoaded[girl.id] }"
+            :style="{ backgroundColor: girl.color || '#333' }"
+          ></div>
         </div>
 
         <div class="card__content">
@@ -46,6 +61,28 @@ import { useGirlsStore } from '@/stores/girlsStore'
 const girlsStore = useGirlsStore()
 const girls = computed(() => girlsStore.girls)
 const activeCard = ref<string | number | null>(null)
+const imageLoaded = ref<Record<number, boolean>>({})
+
+// Handle image load
+const onImageLoad = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  const girl = girls.value.find(g => img.src.includes(g.image))
+  
+  if (girl) {
+    // Add a small delay to ensure the image is fully rendered
+    setTimeout(() => {
+      imageLoaded.value = { ...imageLoaded.value, [girl.id]: true }
+      img.style.opacity = '1'
+    }, 50)
+  }
+}
+
+// Handle image error
+const onImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  img.style.opacity = '0'
+  console.error(`Failed to load image: ${img.src}`)
+}
 </script>
 
 <style scoped lang="scss">
@@ -77,6 +114,8 @@ const activeCard = ref<string | number | null>(null)
   cursor: pointer;
   isolation: isolate;
   transition: box-shadow 0.3s ease;
+  contain: content;
+  will-change: transform;
 
   &:hover,
   &:focus-within,
@@ -90,12 +129,37 @@ const activeCard = ref<string | number | null>(null)
     z-index: 1;
     transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
     transform-origin: top;
+    background: linear-gradient(90deg, $black, #333);
+    backface-visibility: hidden;
+    transform: translateZ(0);
 
     img {
+      position: relative;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: filter 0.3s ease;
+      transition: opacity 0.5s ease, filter 0.3s ease, transform 0.5s ease;
+      opacity: 0;
+      z-index: 2;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      will-change: transform, opacity;
+    }
+
+    &-placeholder {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      transition: opacity 0.5s ease;
+      opacity: 1;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+      will-change: opacity;
+      
+      &--hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
     }
   }
 
