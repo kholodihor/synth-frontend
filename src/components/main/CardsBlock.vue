@@ -7,7 +7,7 @@
       <div class="card" v-for="(card, index) in info" :key="index">
         <img :src="card.image" />
         <div class="content">
-          <a :href="card.url" target="_blank">listen</a>
+          <a :href="card.url" target="_blank">play 🎧ྀི</a>
         </div>
       </div>
     </div>
@@ -38,7 +38,7 @@ const info = computed(() => cardsStore.cards)
     width: 100%;
     height: 100%;
     z-index: -10;
-    
+
     img {
       width: 100%;
       height: 100%;
@@ -71,7 +71,7 @@ const info = computed(() => cardsStore.cards)
       transition: transform 0.3s ease;
 
       &:hover {
-        transform: scale(0.95);
+        transform: scale(0.93);
       }
 
       img {
@@ -83,13 +83,15 @@ const info = computed(() => cardsStore.cards)
       .content {
         position: absolute;
         padding: 1rem;
-        
+
         a {
+          font-size: 1.5rem;
+          font-weight: bold;
           color: $white;
           text-decoration: none;
           text-transform: uppercase;
           letter-spacing: 2px;
-          
+
           &:hover {
             color: $blue;
           }
@@ -100,7 +102,12 @@ const info = computed(() => cardsStore.cards)
 }
 
 @keyframes drive {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.3); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
 }
 </style>
