@@ -9,6 +9,7 @@
       <Bands v-if="!bandsError" :bands="bandsStore.bands" />
       <div v-else class="error-message">{{ bandsError }}</div>
       <CardsBlock />
+      <MusicGenerator />
       <TopSongs v-if="!songsError" :songs="topSongStore.songs" />
       <div v-else class="error-message">{{ songsError }}</div>
       <SynthpopGirls />
@@ -30,6 +31,7 @@ import Hero from '@/components/main/Hero.vue'
 import Bands from '@/components/main/Bands.vue'
 import Navbar from '@/components/main/Navbar.vue'
 import CardsBlock from '@/components/main/CardsBlock.vue'
+import MusicGenerator from '@/components/main/MusicGenerator.vue'
 import TopSongs from '@/components/main/topsongs/TopSongs.vue'
 import SynthpopGirls from '@/components/main/SynthpopGirls.vue'
 import Video from '@/components/main/Video.vue'
