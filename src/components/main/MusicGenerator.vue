@@ -66,10 +66,11 @@
         </div>
 
         <div class="actions">
-          <button type="submit" :disabled="submitting">
+          <button type="submit" :disabled="submitting || limited">
             <span v-if="!submitting">Generate</span>
             <span v-else>Generating...</span>
           </button>
+          <small v-if="limited" class="limit-msg">You can generate again in {{ timeLeftLabel }}</small>
         </div>
 
         <p v-if="error" class="error" role="alert">{{ error }}</p>
@@ -109,13 +110,22 @@ type GenerateResponse = {
   categories?: string[]
 }
 
-const mode = ref<'with_described_lyrics' | 'from_description' | 'with_lyrics'>('with_described_lyrics')
-const modeOptions = [
+type Mode = 'with_described_lyrics' | 'from_description' | 'with_lyrics'
+type ModeOption = { value: Mode; label: string }
+
+const mode = ref<Mode>('with_described_lyrics')
+const modeOptions: ModeOption[] = [
   { value: 'with_described_lyrics', label: 'With Described Lyrics' },
   { value: 'from_description', label: 'From Description' },
   { value: 'with_lyrics', label: 'With Lyrics' },
-] as const
-const modeLabel = computed(() => modeOptions.find(o => o.value === mode.value)?.label || '')
+]
+const modeLabel = computed<string>(() => {
+  const mv: Mode = mode.value as Mode
+  for (let i = 0; i < modeOptions.length; i++) {
+    if (modeOptions[i].value === mv) return modeOptions[i].label
+  }
+  return ''
+})
 
 // custom dropdown state
 const open = ref(false)
@@ -125,18 +135,22 @@ const selectRef = ref<HTMLElement | null>(null)
 function toggleOpen() {
   open.value = !open.value
   if (open.value) {
-    const idx = modeOptions.findIndex(o => o.value === mode.value)
-    highlighted.value = idx >= 0 ? idx : 0
+    const mv: Mode = mode.value as Mode
+    let idx = 0
+    for (let i = 0; i < modeOptions.length; i++) {
+      if (modeOptions[i].value === mv) { idx = i; break }
+    }
+    highlighted.value = idx
     nextTick(() => focusList())
   }
 }
 
 function focusList() {
-  const el = selectRef.value?.querySelector('.neon-select__list') as HTMLElement | null
-  el?.focus()
+  const el = selectRef.value?.querySelector('.neon-select__list')
+  if (el && el instanceof HTMLElement) el.focus()
 }
 
-function selectOption(val: typeof mode.value) {
+function selectOption(val: Mode) {
   mode.value = val
   open.value = false
 }
@@ -177,6 +191,50 @@ const submitting = ref(false)
 const error = ref('')
 const result = ref<GenerateResponse | null>(null)
 
+// limit: 1 request per 24h via localStorage
+const LIMIT_MS = 24 * 60 * 60 * 1000
+const STORAGE_KEY = 'music_gen_last_ts'
+
+function getLastTs(): number | null {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const n = Number(raw)
+    return Number.isFinite(n) ? n : null
+  } catch {
+    return null
+  }
+}
+
+function setLastTs(ts: number) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, String(ts))
+  } catch {
+    // ignore
+  }
+}
+
+function remainingMs(): number {
+  const last = getLastTs()
+  if (!last) return 0
+  const ms = LIMIT_MS - (Date.now() - last)
+  return ms > 0 ? ms : 0
+}
+
+const limited = computed<boolean>(() => remainingMs() > 0)
+
+function formatDuration(ms: number): string {
+  const totalSec = Math.ceil(ms / 1000)
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  if (h > 0) return `${h}h ${m}m`
+  if (m > 0) return `${m}m ${s}s`
+  return `${s}s`
+}
+
+const timeLeftLabel = computed<string>(() => formatDuration(remainingMs()))
+
 const audioUrl = computed(() =>
   result.value?.s3_key ||
   result.value?.song_url ||
@@ -193,7 +251,7 @@ const coverUrl = computed(() =>
   ''
 )
 
-const endpoints: Record<string, string> = {
+const endpoints: Record<Mode, string> = {
   with_described_lyrics: '/api/music/generate-with-described-lyrics',
   from_description: '/api/music/generate-from-description',
   with_lyrics: '/api/music/generate-with-lyrics',
@@ -203,6 +261,13 @@ async function onSubmit() {
   error.value = ''
   result.value = null
 
+  // enforce local 24h limit
+  const left = remainingMs()
+  if (left > 0) {
+    error.value = `Daily limit reached. Try again in ${formatDuration(left)}.`
+    return
+  }
+
   if (!prompt.value) {
     error.value = 'Prompt is required.'
     return
@@ -210,7 +275,8 @@ async function onSubmit() {
 
   try {
     submitting.value = true
-    const endpoint = endpoints[mode.value]
+    const mv: Mode = mode.value as Mode
+    const endpoint = endpoints[mv]
 
     const body: Record<string, any> = { prompt: prompt.value, duration: duration.value }
     if (mode.value === 'with_described_lyrics') body.described_lyrics = describedLyrics.value
@@ -218,6 +284,8 @@ async function onSubmit() {
 
     const { data } = await axios.post<GenerateResponse>(endpoint, body)
     result.value = data
+    // mark successful generation time
+    setLastTs(Date.now())
   } catch (e: any) {
     const apiMsg = e?.response?.data?.error
     error.value = apiMsg || e?.message || 'Unexpected error'
