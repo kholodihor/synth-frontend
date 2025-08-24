@@ -1,4 +1,4 @@
-# Synth Pop Bands Platform
+# Synth Pop Platform
 
 A modern web application for discovering and managing synth pop bands, their music, and related content. This platform features a responsive frontend built with Vue 3, TypeScript, and Vite, powered by a Node.js/Express backend with MongoDB.
 
