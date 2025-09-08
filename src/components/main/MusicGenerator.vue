@@ -67,8 +67,8 @@
 
         <div class="actions">
           <button type="submit" :disabled="submitting || limited">
-            <span v-if="!submitting">Generate</span>
-            <span v-else>Generating...</span>
+            <span v-if="!submitting">Generate Music</span>
+            <span v-else>Processing... (this may take a few minutes)</span>
           </button>
           <small v-if="limited" class="limit-msg">You can generate again in {{ timeLeftLabel }}</small>
         </div>
@@ -251,10 +251,38 @@ const coverUrl = computed(() =>
   ''
 )
 
-const endpoints: Record<Mode, string> = {
-  with_described_lyrics: '/api/music/generate-with-described-lyrics',
-  from_description: '/api/music/generate-from-description',
-  with_lyrics: '/api/music/generate-with-lyrics',
+const kindMap: Record<Mode, string> = {
+  with_described_lyrics: 'withDescribedLyrics',
+  from_description: 'fromDescription',
+  with_lyrics: 'withLyrics',
+}
+
+async function pollJobStatus(jobId: string): Promise<GenerateResponse> {
+  const maxAttempts = 60 // 5 minutes max (5s intervals)
+  let attempts = 0
+  
+  while (attempts < maxAttempts) {
+    try {
+      const { data } = await axios.get(`/api/jobs/${jobId}`)
+      
+      if (data.status === 'done') {
+        return data.result
+      } else if (data.status === 'error') {
+        throw new Error(data.error || 'Generation failed')
+      }
+      
+      // Still processing, wait and retry
+      await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second intervals
+      attempts++
+    } catch (e: any) {
+      if (e.response?.status === 404) {
+        throw new Error('Job not found')
+      }
+      throw e
+    }
+  }
+  
+  throw new Error('Generation timed out. Please try again.')
 }
 
 async function onSubmit() {
@@ -276,14 +304,38 @@ async function onSubmit() {
   try {
     submitting.value = true
     const mv: Mode = mode.value as Mode
-    const endpoint = endpoints[mv]
+    const kind = kindMap[mv]
 
-    const body: Record<string, any> = { prompt: prompt.value, duration: duration.value }
-    if (mode.value === 'with_described_lyrics') body.described_lyrics = describedLyrics.value
-    if (mode.value === 'with_lyrics') body.lyrics = lyrics.value
+    // Build payload based on mode
+    const payload: Record<string, any> = { 
+      audio_duration: duration.value,
+      instrumental: false
+    }
+    
+    if (mode.value === 'with_described_lyrics') {
+      payload.prompt = prompt.value
+      payload.described_lyrics = describedLyrics.value || prompt.value
+    } else if (mode.value === 'from_description') {
+      payload.description = prompt.value
+    } else if (mode.value === 'with_lyrics') {
+      payload.prompt = prompt.value
+      payload.lyrics = lyrics.value
+    }
 
-    const { data } = await axios.post<GenerateResponse>(endpoint, body)
-    result.value = data
+    // Enqueue the job
+    const { data: jobData } = await axios.post('/api/jobs/enqueue', {
+      kind,
+      payload
+    })
+
+    if (!jobData.jobId) {
+      throw new Error('Failed to enqueue job')
+    }
+
+    // Poll for completion
+    const generatedResult = await pollJobStatus(jobData.jobId)
+    result.value = generatedResult
+    
     // mark successful generation time
     setLastTs(Date.now())
   } catch (e: any) {
