@@ -47,22 +47,47 @@
 
         <div class="row">
           <label for="prompt">Prompt</label>
-          <input id="prompt" class="inputbox" v-model.trim="prompt" type="text" placeholder="e.g. upbeat synthwave with retro vibes" />
+          <input
+            id="prompt"
+            class="inputbox"
+            v-model.trim="prompt"
+            type="text"
+            placeholder="e.g. upbeat synthwave with retro vibes"
+          />
         </div>
 
         <div class="row" v-if="mode === 'with_described_lyrics'">
           <label for="describedLyrics">Described Lyrics</label>
-          <textarea id="describedLyrics" class="inputbox" v-model.trim="describedLyrics" rows="4" placeholder="Describe the theme/story for the lyrics"></textarea>
+          <textarea
+            id="describedLyrics"
+            class="inputbox"
+            v-model.trim="describedLyrics"
+            rows="4"
+            placeholder="Describe the theme/story for the lyrics"
+          ></textarea>
         </div>
 
         <div class="row" v-if="mode === 'with_lyrics'">
           <label for="lyrics">Lyrics</label>
-          <textarea id="lyrics" class="inputbox" v-model.trim="lyrics" rows="6" placeholder="Paste your lyrics here"></textarea>
+          <textarea
+            id="lyrics"
+            class="inputbox"
+            v-model.trim="lyrics"
+            rows="6"
+            placeholder="Paste your lyrics here"
+          ></textarea>
         </div>
 
         <div class="row">
           <label for="duration">Duration (seconds)</label>
-          <input id="duration" class="inputbox" v-model.number="duration" type="number" min="5" max="120" />
+          <input
+            id="duration"
+            class="inputbox"
+            v-model.number="duration"
+            type="number"
+            min="5"
+            max="120"
+          />
         </div>
 
         <div class="actions">
@@ -70,7 +95,9 @@
             <span v-if="!submitting">Generate Music</span>
             <span v-else>Processing... (this may take a few minutes)</span>
           </button>
-          <small v-if="limited" class="limit-msg">You can generate again in {{ timeLeftLabel }}</small>
+          <small v-if="limited" class="limit-msg"
+            >You can generate again in {{ timeLeftLabel }}</small
+          >
         </div>
 
         <p v-if="error" class="error" role="alert">{{ error }}</p>
@@ -117,7 +144,7 @@ const mode = ref<Mode>('with_described_lyrics')
 const modeOptions: ModeOption[] = [
   { value: 'with_described_lyrics', label: 'With Described Lyrics' },
   { value: 'from_description', label: 'From Description' },
-  { value: 'with_lyrics', label: 'With Lyrics' },
+  { value: 'with_lyrics', label: 'With Lyrics' }
 ]
 const modeLabel = computed<string>(() => {
   const mv: Mode = mode.value as Mode
@@ -138,7 +165,10 @@ function toggleOpen() {
     const mv: Mode = mode.value as Mode
     let idx = 0
     for (let i = 0; i < modeOptions.length; i++) {
-      if (modeOptions[i].value === mv) { idx = i; break }
+      if (modeOptions[i].value === mv) {
+        idx = i
+        break
+      }
     }
     highlighted.value = idx
     nextTick(() => focusList())
@@ -235,44 +265,46 @@ function formatDuration(ms: number): string {
 
 const timeLeftLabel = computed<string>(() => formatDuration(remainingMs()))
 
-const audioUrl = computed(() =>
-  result.value?.s3_key ||
-  result.value?.song_url ||
-  result.value?.audio_url ||
-  result.value?.audio ||
-  ''
+const audioUrl = computed(
+  () =>
+    result.value?.s3_key ||
+    result.value?.song_url ||
+    result.value?.audio_url ||
+    result.value?.audio ||
+    ''
 )
 
-const coverUrl = computed(() =>
-  result.value?.cover_image_s3_key ||
-  result.value?.cover_url ||
-  result.value?.image_url ||
-  result.value?.image ||
-  ''
+const coverUrl = computed(
+  () =>
+    result.value?.cover_image_s3_key ||
+    result.value?.cover_url ||
+    result.value?.image_url ||
+    result.value?.image ||
+    ''
 )
 
 const kindMap: Record<Mode, string> = {
   with_described_lyrics: 'withDescribedLyrics',
   from_description: 'fromDescription',
-  with_lyrics: 'withLyrics',
+  with_lyrics: 'withLyrics'
 }
 
 async function pollJobStatus(jobId: string): Promise<GenerateResponse> {
   const maxAttempts = 60 // 5 minutes max (5s intervals)
   let attempts = 0
-  
+
   while (attempts < maxAttempts) {
     try {
       const { data } = await axios.get(`/api/jobs/${jobId}`)
-      
+
       if (data.status === 'done') {
         return data.result
       } else if (data.status === 'error') {
         throw new Error(data.error || 'Generation failed')
       }
-      
+
       // Still processing, wait and retry
-      await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second intervals
+      await new Promise((resolve) => setTimeout(resolve, 5000)) // 5 second intervals
       attempts++
     } catch (e: any) {
       if (e.response?.status === 404) {
@@ -281,7 +313,7 @@ async function pollJobStatus(jobId: string): Promise<GenerateResponse> {
       throw e
     }
   }
-  
+
   throw new Error('Generation timed out. Please try again.')
 }
 
@@ -307,11 +339,11 @@ async function onSubmit() {
     const kind = kindMap[mv]
 
     // Build payload based on mode
-    const payload: Record<string, any> = { 
+    const payload: Record<string, any> = {
       audio_duration: duration.value,
       instrumental: false
     }
-    
+
     if (mode.value === 'with_described_lyrics') {
       payload.prompt = prompt.value
       payload.described_lyrics = describedLyrics.value || prompt.value
@@ -335,7 +367,7 @@ async function onSubmit() {
     // Poll for completion
     const generatedResult = await pollJobStatus(jobData.jobId)
     result.value = generatedResult
-    
+
     // mark successful generation time
     setLastTs(Date.now())
   } catch (e: any) {
@@ -395,7 +427,7 @@ async function onSubmit() {
         width: 100%;
         text-align: left;
         background: linear-gradient(180deg, rgba($black, 0.6), rgba($black, 0.4)) padding-box,
-                    linear-gradient(90deg, rgba($blue, 0.7), rgba($purple, 0.7)) border-box;
+          linear-gradient(90deg, rgba($blue, 0.7), rgba($purple, 0.7)) border-box;
         border: 1px solid transparent;
         color: $white;
         border-radius: 10px;
@@ -481,7 +513,9 @@ async function onSubmit() {
 
   .actions {
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1rem;
 
     button {
       padding: 0.75rem 1.25rem;
@@ -504,6 +538,83 @@ async function onSubmit() {
         opacity: 0.7;
       }
     }
+
+    .limit-notification {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem 1.5rem;
+      background: linear-gradient(135deg, 
+        rgba(255, 193, 7, 0.1) 0%, 
+        rgba(255, 152, 0, 0.15) 50%, 
+        rgba(255, 87, 34, 0.1) 100%
+      );
+      border: 2px solid rgba(255, 193, 7, 0.3);
+      border-radius: 16px;
+      box-shadow: 
+        0 12px 40px rgba(255, 193, 7, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(20px);
+      width: 100%;
+      max-width: 450px;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, 
+          transparent 0%, 
+          rgba(255, 193, 7, 0.8) 50%, 
+          transparent 100%
+        );
+        animation: shimmer 2s ease-in-out infinite;
+      }
+
+      .limit-icon {
+        font-size: 2rem;
+        background: linear-gradient(135deg, #ffc107, #ff9800);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 0 12px rgba(255, 193, 7, 0.6));
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .limit-content {
+        flex: 1;
+
+        .limit-title {
+          color: #ffc107;
+          font-weight: 700;
+          font-size: 1rem;
+          margin-bottom: 0.5rem;
+          text-shadow: 0 0 15px rgba(255, 193, 7, 0.4);
+          letter-spacing: 0.3px;
+        }
+
+        .limit-countdown {
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 0.9rem;
+          font-weight: 600;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+      }
+    }
+
+    @keyframes shimmer {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
   }
 }
 
@@ -518,7 +629,8 @@ async function onSubmit() {
     gap: 1rem;
 
     img {
-      width: 100%;
+      width: 50%;
+      max-width: 300px;
       border-radius: 12px;
       border: 1px solid rgba($blue, 0.4);
       box-shadow: 0 10px 30px rgba($black, 0.6);
