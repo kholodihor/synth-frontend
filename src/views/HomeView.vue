@@ -10,8 +10,7 @@
       <div v-else class="error-message">{{ bandsError }}</div>
       <CardsBlock />
       <MusicGenerator />
-      <TopSongs v-if="!songsError" :songs="topSongStore.songs" />
-      <div v-else class="error-message">{{ songsError }}</div>
+      <TopSongs :songs="topSongStore.songs" />
       <SynthpopGirls />
       <Video v-if="!videosError" :videos="videoStore.videos" />
       <div v-else class="error-message">{{ videosError }}</div>
@@ -43,7 +42,6 @@ const topSongStore = useTopSongsStore()
 
 const isLoading = ref(true)
 const bandsError = ref('')
-const songsError = ref('')
 const videosError = ref('')
 
 onMounted(async () => {
@@ -54,13 +52,8 @@ onMounted(async () => {
       }),
       videoStore.fetchVideos().catch((error) => {
         videosError.value = 'Failed to load videos: ' + error.message
-      }),
-      topSongStore.fetchSongs().catch((error) => {
-        songsError.value = 'Failed to load songs: ' + error.message
       })
     ])
-  } catch (error) {
-    console.error('Failed to load content:', error)
   } finally {
     isLoading.value = false
   }

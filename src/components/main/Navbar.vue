@@ -1,43 +1,31 @@
 <template>
   <header class="profile-header" role="banner">
     <router-link to="/" class="logo" aria-label="Synth - Home">Synth</router-link>
-    
-    <nav v-if="!profileStore._id" class="nav-actions">
-      <router-link 
-        to="/login" 
-        class="login-btn"
-        aria-label="Login to your account"
-      >
+
+    <nav v-if="!userStore.isLoggedIn" class="nav-actions">
+      <router-link to="/login" class="login-btn" aria-label="Login to your account">
         Login
       </router-link>
     </nav>
 
     <nav v-else class="profile" aria-label="User navigation">
-      <router-link 
-        :to="'/account/profile/' + profileStore._id" 
-        class="login-btn"
-        aria-label="Go to your profile"
-      >
+      <router-link :to="userStore.profilePath" class="login-btn" aria-label="Go to your profile">
         Go to Profile
       </router-link>
-      
-      <LinkBtn 
-        text="LogOut" 
-        :danger="true" 
+
+      <LinkBtn
+        text="LogOut"
+        :danger="true"
         class="logout-btn"
         @click="logOut"
         aria-label="Log out from your account"
       />
-      
+
       <div class="avatar-wrapper">
-        <div 
-          class="avatar"
-          role="img"
-          :aria-label="'Profile picture of ' + profileStore.username"
-        >
-          <img 
-            :src="profileStore.image" 
-            :alt="getFirstLetters(profileStore.username)"
+        <div class="avatar" role="img" :aria-label="'Profile picture of ' + userStore.username">
+          <img
+            :src="userStore.image || DefaultAvatar"
+            :alt="getFirstLetters(userStore.username)"
             loading="lazy"
           />
         </div>
@@ -50,25 +38,17 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-import { useProfileStore } from '@/stores/profileStore'
-import { useSongStore } from '@/stores/songStore'
-import { useVideoStore } from '@/stores/videoStore'
 import { getFirstLetters } from '@/helpers'
 import Swal from '@/utils/swal'
 import LinkBtn from '@/components/shared/LinkBtn.vue'
+import DefaultAvatar from '/DefaultUserAvatar.png'
 
 const router = useRouter()
 const userStore = useUserStore()
-const profileStore = useProfileStore()
-const songStore = useSongStore()
-const videoStore = useVideoStore()
 
-onMounted(async () => {
-  try {
-    await profileStore.fetchProfileById()
-  } catch (error) {
-    console.error('Failed to fetch profile:', error)
-  }
+onMounted(() => {
+  // Refresh avatar/username for logged-in users; errors (e.g. expired token) are handled by the axios interceptor
+  if (userStore.isLoggedIn) userStore.fetchUser().catch(() => {})
 })
 
 const logOut = async () => {
@@ -83,21 +63,8 @@ const logOut = async () => {
   })
 
   if (result.isConfirmed) {
-    try {
-      userStore.clearUser()
-      profileStore.clearProfile()
-      songStore.clearSongs()
-      videoStore.clearVideos()
-      window.localStorage.removeItem('token')
-      await router.push('/')
-    } catch (error) {
-      console.error('Logout failed:', error)
-      Swal.fire({
-        title: 'Logout Failed',
-        text: 'Please try again later',
-        icon: 'error'
-      })
-    }
+    userStore.logout()
+    await router.push('/')
   }
 }
 </script>

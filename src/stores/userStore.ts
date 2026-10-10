@@ -1,59 +1,74 @@
 import axios from 'axios'
 import { defineStore } from 'pinia'
+import type { AuthResponse, User } from '@/types'
+import { useBandsStore } from './bandsStore'
+import { useSongStore } from './songStore'
+import { useVideoStore } from './videoStore'
 
-export type User = {
-  _id: string
-  token: string
-  username: string
-  email: string
-  image: string
-}
+const emptyUser = (): User => ({
+  _id: '',
+  token: '',
+  username: '',
+  email: '',
+  image: ''
+})
 
 export const useUserStore = defineStore('user', {
-  state: (): User => ({
-    _id: '',
-    token: '',
-    username: '',
-    email: '',
-    image: ''
-  }),
+  state: emptyUser,
+
+  getters: {
+    isLoggedIn: (state) => Boolean(state.token),
+    profilePath: (state) => `/account/profile/${state._id}`
+  },
+
   actions: {
-    setUserDetails(res: { data: User }) {
+    setSession(data: AuthResponse) {
       this.$patch({
-        _id: res.data._id,
-        token: res.data.token,
-        username: res.data.username,
-        email: res.data.email
+        _id: data._id,
+        token: data.token,
+        username: data.username,
+        email: data.email,
+        image: data.avatarUrl || ''
       })
     },
 
     async fetchUser() {
-      try {
-        const res = await axios.get('api/user')
-        this.$patch({
-          _id: res.data._id,
-          username: res.data.username,
-          image: res.data.avatarUrl ?
-            import.meta.env.VITE_APP_API_URL + 'uploads/images/users/' + res.data.avatarUrl : ''
-        })
-      } catch (error) {
-        console.error('Error fetching user:', error)
-      }
-    },
-
-    userImage(image: string) {
-      return import.meta.env.VITE_APP_API_URL + image
-    },
-
-    clearUser() {
+      const { data } = await axios.get('api/user')
       this.$patch({
-        _id: '',
-        token: '',
-        username: '',
-        email: '',
-        image: ''
+        _id: data._id,
+        username: data.username,
+        email: data.email,
+        image: data.avatarUrl || ''
       })
+    },
+
+    async login(credentials: { email: string; password: string }) {
+      const { data } = await axios.post<AuthResponse>('api/user/login', credentials)
+      this.setSession(data)
+      await this.loadUserContent()
+    },
+
+    async register(payload: { username: string; email: string; password: string }) {
+      const { data } = await axios.post<AuthResponse>('api/user/register', payload)
+      this.setSession(data)
+      await this.loadUserContent()
+    },
+
+    async loadUserContent() {
+      await Promise.all([
+        useSongStore().fetchSongsByUserId(),
+        useBandsStore().fetchBandsByUserId(),
+        useVideoStore().fetchVideosByUserId()
+      ])
+    },
+
+    logout() {
+      this.$patch(emptyUser())
+      useSongStore().clearSongs()
+      useBandsStore().clearUserBands()
+      useVideoStore().clearUserVideos()
     }
   },
+
   persist: true
 })

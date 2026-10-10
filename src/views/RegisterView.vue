@@ -45,25 +45,15 @@
 
 <script setup lang="ts">
 import { reactive, ref, computed } from 'vue'
-import axios from 'axios'
-import Swal from '@/utils/swal'
 import { useRouter, RouterLink } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
-import { useProfileStore } from '@/stores/profileStore'
-import { useSongStore } from '@/stores/songStore'
-import { useVideoStore } from '@/stores/videoStore'
-import { useBandsStore } from '@/stores/bandsStore'
 import { useVuelidate } from '@vuelidate/core'
-import { required, email, minLength, sameAs } from '@vuelidate/validators'
+import { required, email, minLength, sameAs, helpers } from '@vuelidate/validators'
+import { notifyError, notifyInvalidForm } from '@/utils/notify'
 import TextInput from '@/components/shared/TextInput.vue'
-import { handleErrors } from '@/utils/handleErrors'
 
 const router = useRouter()
 const userStore = useUserStore()
-const profileStore = useProfileStore()
-const songStore = useSongStore()
-const videoStore = useVideoStore()
-const bandsStore = useBandsStore()
 
 const form = reactive({
   username: '',
@@ -74,84 +64,42 @@ const form = reactive({
 
 const isProcessing = ref(false)
 
-const rules = computed(() => {
-  return {
-    username: { required },
-    email: { required, email },
-    password: { required, minLength: minLength(6) },
-    confirmPassword: { required, minLength: minLength(6), sameAs: sameAs(form.password) }
-  }
-})
+// Mirror the backend Joi rules so users see problems before submitting
+const usernamePattern = helpers.withMessage(
+  'Username can only contain letters, numbers, spaces, underscores and dashes',
+  helpers.regex(/^[\p{L}\p{N} _-]+$/u)
+)
+const passwordPattern = helpers.withMessage(
+  'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+  helpers.regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/)
+)
+
+const rules = computed(() => ({
+  username: { required, minLength: minLength(3), usernamePattern },
+  email: { required, email },
+  password: { required, minLength: minLength(6), passwordPattern },
+  confirmPassword: { required, sameAs: sameAs(form.password) }
+}))
 
 const v$ = useVuelidate(rules, form)
 
 const register = async () => {
-  const result = await v$.value.$validate()
-  if (result) {
-    isProcessing.value = true
-    try {
-      const response = await axios.post('/api/user/register', {
-        username: form.username,
-        email: form.email,
-        password: form.password
-      })
-      
-      // Check if the response has the success flag
-      if (response.data && response.data.success === false) {
-        isProcessing.value = false
-        Swal.fire({
-          title: 'Registration Failed',
-          text: handleErrors(response.data.message || 'Registration failed'),
-          icon: 'error',
-          confirmButtonColor: '#219dff'
-        })
-        return
-      }
-      
-      axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.token
-      console.log('Response:', response.data)
-      userStore.setUserDetails(response)
-      await profileStore.fetchProfileById()
-      await songStore.fetchSongsByUserId()
-      await bandsStore.fetchBandsByUserId()
-      await videoStore.fetchVideosByUserId()
-      isProcessing.value = false
-      router.push('/account/profile/' + userStore._id)
-    } catch (error) {
-      isProcessing.value = false
-      if (axios.isAxiosError(error)) {
-        console.log('Error response:', error.response?.data)
-        // Handle the new Effect-based error response format
-        let errorMsg = 'An error occurred'
-        if (error.response?.data) {
-          errorMsg = error.response.data.message || error.message
-        } else {
-          errorMsg = error.message
-        }
-        
-        Swal.fire({
-          title: 'Registration Failed',
-          text: handleErrors(errorMsg),
-          icon: 'error',
-          confirmButtonColor: '#219dff'
-        })
-      } else {
-        console.error('An error occurred:', error)
-        Swal.fire({
-          title: 'Registration Failed',
-          text: 'An unexpected error occurred',
-          icon: 'error',
-          confirmButtonColor: '#219dff'
-        })
-      }
-    }
-  } else {
-    Swal.fire({
-      title: 'Something went wrong!',
-      text: 'You dont fill all fields that are required or inputs are invalid',
-      icon: 'warning',
-      confirmButtonColor: '#219dff'
+  if (!(await v$.value.$validate())) {
+    notifyInvalidForm()
+    return
+  }
+  isProcessing.value = true
+  try {
+    await userStore.register({
+      username: form.username,
+      email: form.email,
+      password: form.password
     })
+    router.push(userStore.profilePath)
+  } catch (error) {
+    notifyError('Registration Failed', error)
+  } finally {
+    isProcessing.value = false
   }
 }
 </script>

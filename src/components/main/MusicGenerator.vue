@@ -119,7 +119,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import '@/utils/axios'
 import axios from 'axios'
 
 type GenerateResponse = {
@@ -290,7 +289,7 @@ const kindMap: Record<Mode, string> = {
 }
 
 async function pollJobStatus(jobId: string): Promise<GenerateResponse> {
-  const maxAttempts = 60 // 5 minutes max (5s intervals)
+  const maxAttempts = 180 // 15 minutes max (5s intervals), matching the backend Modal timeout
   let attempts = 0
 
   while (attempts < maxAttempts) {
@@ -544,16 +543,15 @@ async function onSubmit() {
       align-items: center;
       gap: 1rem;
       padding: 1.25rem 1.5rem;
-      background: linear-gradient(135deg, 
-        rgba(255, 193, 7, 0.1) 0%, 
-        rgba(255, 152, 0, 0.15) 50%, 
+      background: linear-gradient(
+        135deg,
+        rgba(255, 193, 7, 0.1) 0%,
+        rgba(255, 152, 0, 0.15) 50%,
         rgba(255, 87, 34, 0.1) 100%
       );
       border: 2px solid rgba(255, 193, 7, 0.3);
       border-radius: 16px;
-      box-shadow: 
-        0 12px 40px rgba(255, 193, 7, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      box-shadow: 0 12px 40px rgba(255, 193, 7, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(20px);
       width: 100%;
       max-width: 450px;
@@ -567,9 +565,10 @@ async function onSubmit() {
         left: 0;
         right: 0;
         height: 2px;
-        background: linear-gradient(90deg, 
-          transparent 0%, 
-          rgba(255, 193, 7, 0.8) 50%, 
+        background: linear-gradient(
+          90deg,
+          transparent 0%,
+          rgba(255, 193, 7, 0.8) 50%,
           transparent 100%
         );
         animation: shimmer 2s ease-in-out infinite;
@@ -607,13 +606,23 @@ async function onSubmit() {
     }
 
     @keyframes shimmer {
-      0%, 100% { opacity: 0.3; }
-      50% { opacity: 1; }
+      0%,
+      100% {
+        opacity: 0.3;
+      }
+      50% {
+        opacity: 1;
+      }
     }
 
     @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.1); }
+      0%,
+      100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
     }
   }
 }

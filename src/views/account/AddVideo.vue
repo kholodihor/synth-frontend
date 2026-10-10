@@ -2,29 +2,43 @@
   <div class="page wrapper">
     <h1>Add Video</h1>
     <div class="divider"></div>
-    <TextInput label="Title" placeholder="Title of Video" v-model:input="form.title" inputType="text" />
-    <span v-for="error in v$.title.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <TextInput label="Video Url" placeholder="Add a url of a Youtube Video" v-model:input="form.videoUrl"
-      inputType="text" />
-    <span v-for="error in v$.videoUrl.$errors" :key="error.uid" class="error">{{ error.$message }}</span>
-    <SubmitBtn :text="processing ? 'loading...' : 'add video'"  @click="addYoutubeVideoLink" />
+    <TextInput
+      label="Title"
+      placeholder="Title of Video"
+      v-model:input="form.title"
+      inputType="text"
+    />
+    <span v-for="error in v$.title.$errors" :key="error.uid" class="error">{{
+      error.$message
+    }}</span>
+    <TextInput
+      label="Video Url"
+      placeholder="Add a url of a Youtube Video"
+      v-model:input="form.videoUrl"
+      inputType="text"
+    />
+    <span v-for="error in v$.videoUrl.$errors" :key="error.uid" class="error">{{
+      error.$message
+    }}</span>
+    <SubmitBtn :text="processing ? 'loading...' : 'add video'" @click="addYoutubeVideoLink" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/userStore';
+import { useUserStore } from '@/stores/userStore'
+import { useVideoStore } from '@/stores/videoStore'
 import { useVuelidate } from '@vuelidate/core'
 import { required, url } from '@vuelidate/validators'
-import { handleErrors } from '@/utils/handleErrors'
+import { notifyError, notifyInvalidForm, notifySuccess } from '@/utils/notify'
 import TextInput from '@/components/shared/TextInput.vue'
 import SubmitBtn from '@/components/shared/SubmitBtn.vue'
-import Swal from '@/utils/swal'
 
 const router = useRouter()
 const userStore = useUserStore()
+const videoStore = useVideoStore()
 
 const processing = ref(false)
 
@@ -36,74 +50,25 @@ const form = reactive({
 const rules = {
   title: { required },
   videoUrl: { required, url }
-};
+}
 
 const v$ = useVuelidate(rules, form)
 
 const addYoutubeVideoLink = async () => {
-  const result = await v$.value.$validate();
-  if (result) {
-    processing.value = true
-    try {
-      const formData = new FormData()
-      formData.append('title', form.title)
-      formData.append('url', form.videoUrl)
-      const response = await axios.post('api/video', formData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-      
-      // Check if the response has the success flag
-      if (response.data && response.data.success === false) {
-        Swal.fire({
-          title: 'Failed to Add Video',
-          text: handleErrors(response.data.message || 'Failed to add video'),
-          icon: 'error',
-          confirmButtonColor: '#219dff'
-        })
-        return;
-      }
-      
-      Swal.fire({
-        title: 'New video added!',
-        text: 'You added a video "' + form.title + '"',
-        icon: 'success',
-        confirmButtonColor: '#219dff',
-      })
-      router.push('/account/profile/' + userStore._id)
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log('Error response:', error.response?.data);
-        
-        Swal.fire({
-          title: 'Failed to Add Video',
-          text: handleErrors(error.response?.data?.message || error.message),
-          icon: 'error',
-          confirmButtonColor: '#219dff'
-        })
-      } else {
-        console.error('An error occurred:', error);
-        
-        Swal.fire({
-          title: 'Failed to Add Video',
-          text: 'An unexpected error occurred',
-          icon: 'error',
-          confirmButtonColor: '#219dff'
-        })
-      }
-    } finally{
-      processing.value = false
-    }
-  } else {
-    Swal.fire(
-      {
-        title: 'Something went wrong!',
-        text: 'You dont fill all the fields that are required or inputs are invalid',
-        icon: 'warning',
-        confirmButtonColor: "#219dff",
-      }
-    )
+  if (!(await v$.value.$validate())) {
+    notifyInvalidForm()
+    return
+  }
+  processing.value = true
+  try {
+    await axios.post('api/video', { title: form.title, url: form.videoUrl })
+    notifySuccess('New video added!', `You added a video "${form.title}"`)
+    await videoStore.fetchVideosByUserId()
+    router.push(userStore.profilePath)
+  } catch (error) {
+    notifyError('Failed to Add Video', error)
+  } finally {
+    processing.value = false
   }
 }
 </script>

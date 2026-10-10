@@ -1,71 +1,43 @@
 import axios from 'axios'
 import { defineStore } from 'pinia'
 import type { Band } from '@/types'
-import Swal from '@/utils/swal'
+import { confirmDanger, notifyError, notifySuccess } from '@/utils/notify'
 
-type Bands = {
+type BandsState = {
   bands: Band[]
+  userBands: Band[]
 }
 
 export const useBandsStore = defineStore('bands', {
-  state: (): Bands => ({
-    bands: []
+  state: (): BandsState => ({
+    bands: [],
+    userBands: []
   }),
 
   actions: {
     async getAllBands() {
-      try {
-        const res = await axios.get('api/bands')
-        console.log(res.data)
-        this.$state.bands = res.data
-      } catch (err) {
-        console.log(err)
-      }
+      const { data } = await axios.get<Band[]>('api/bands')
+      this.bands = data
     },
 
     async fetchBandsByUserId() {
-      try {
-        const res = await axios.get('api/user/bands')
-        this.$state.bands = res.data
-      } catch (err) {
-        console.log(err)
-      }
+      const { data } = await axios.get<Band[]>('api/user/bands')
+      this.userBands = data
     },
 
     async deleteBand(_id: string, title: string) {
-      Swal.fire({
-        title: 'Are you sure you want to delete the band "' + title + '"',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, please!',
-        confirmButtonColor: '#29fd53',
-        cancelButtonColor: 'red'
-      }).then(async (result: { isConfirmed: boolean }) => {
-        if (result.isConfirmed) {
-          try {
-            await axios.delete('api/bands/' + _id)
-            this.fetchBandsByUserId()
-            Swal.fire({
-              title: 'Deleted!',
-              text: 'This band has been deleted.',
-              icon: 'success',
-              confirmButtonColor: '#219dff'
-            })
-          } catch (err) {
-            console.log(err)
-          }
-        }
-      })
+      if (!(await confirmDanger(`Are you sure you want to delete the band "${title}"?`))) return
+      try {
+        await axios.delete(`api/bands/${_id}`)
+        await this.fetchBandsByUserId()
+        notifySuccess('Deleted!', 'This band has been deleted.')
+      } catch (error) {
+        notifyError('Delete Failed', error)
+      }
     },
 
-    bandImage(image: string): string {
-      return import.meta.env.VITE_APP_API_URL + image
-    },
-
-    clearBands() {
-      this.$state.bands = []
+    clearUserBands() {
+      this.userBands = []
     }
-  },
-  persist: true
+  }
 })

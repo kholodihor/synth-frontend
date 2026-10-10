@@ -66,8 +66,8 @@ defineProps<{
 }>()
 
 const songCount = computed(() => songStore.songs.length)
-const videoCount = computed(() => videoStore.videos.length)
-const bandCount = computed(() => bandsStore.bands.length)
+const videoCount = computed(() => videoStore.userVideos.length)
+const bandCount = computed(() => bandsStore.userBands.length)
 </script>
 
 <style scoped lang="scss">

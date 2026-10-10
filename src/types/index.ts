@@ -4,6 +4,13 @@ export type User = {
   username: string
   email: string
   image: string
+}
+
+export type AuthResponse = {
+  _id: string
+  username: string
+  email: string
+  token: string
   avatarUrl?: string
 }
 
@@ -16,19 +23,13 @@ export type Song = {
   url: string
 }
 
-export type NewSong = {
-  name: string
-  artist: string
-  url: string
-}
-
 export type Band = {
   _id: string
   title: string
   location: string
   description: string
   image: string
-  user?: User
+  user?: { _id: string; username: string; avatarUrl?: string }
 }
 
 export type Video = {

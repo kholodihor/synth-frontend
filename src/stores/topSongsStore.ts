@@ -2,24 +2,13 @@ import { defineStore } from 'pinia'
 import { topSongs } from '@/data/topSongs'
 import type { Song } from '@/types'
 
-type Songs = {
+type SongsState = {
   songs: Song[]
 }
 
+// Top songs are bundled static data; no persistence or fetching required
 export const useTopSongsStore = defineStore('topsongs', {
-  state: (): Songs => ({
+  state: (): SongsState => ({
     songs: [...topSongs]
-  }),
-
-  actions: {
-    async fetchSongs() {
-      this.songs = [...topSongs]
-      console.log('Loaded songs:', this.songs)
-    },
-
-    clearSongs() {
-      this.songs = []
-    }
-  },
-  persist: true
+  })
 })
