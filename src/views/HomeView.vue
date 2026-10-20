@@ -6,18 +6,18 @@
       <div class="loader"></div>
     </div>
     <template v-else>
-      <Bands v-if="!bandsError" :bands="bandsStore.bands" />
+      <Bands v-reveal v-if="!bandsError" :bands="bandsStore.bands" />
       <div v-else class="error-message">{{ bandsError }}</div>
-      <CardsBlock />
-      <MusicGenerator />
-      <TopSongs :songs="topSongStore.songs" />
-      <SynthpopGirls />
-      <Video v-if="!videosError" :videos="videoStore.videos" />
+      <CardsBlock v-reveal />
+      <MusicGenerator v-reveal />
+      <TopSongs v-reveal :songs="topSongStore.songs" />
+      <SynthpopGirls v-reveal />
+      <Video v-reveal v-if="!videosError" :videos="videoStore.videos" />
       <div v-else class="error-message">{{ videosError }}</div>
     </template>
   </main>
   <footer>
-    <Footer />
+    <Footer v-reveal />
   </footer>
 </template>
 
@@ -35,6 +35,7 @@ import TopSongs from '@/components/main/topsongs/TopSongs.vue'
 import SynthpopGirls from '@/components/main/SynthpopGirls.vue'
 import Video from '@/components/main/Video.vue'
 import Footer from '@/components/main/Footer.vue'
+import { vReveal } from '@/directives/reveal'
 
 const bandsStore = useBandsStore()
 const videoStore = useVideoStore()
